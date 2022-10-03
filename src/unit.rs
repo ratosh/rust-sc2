@@ -1964,6 +1964,7 @@ impl Unit {
 				buffs: u
 					.get_buff_ids()
 					.iter()
+					.filter(|&b| BuffId::from_u32(b.clone()).is_some())
 					.map(|b| {
 						BuffId::from_u32(*b).unwrap_or_else(|| panic!("There's no `BuffId` with value {}", b))
 					})
