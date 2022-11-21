@@ -256,6 +256,16 @@ impl Units {
 	pub fn of_type(&self, unit_type: UnitTypeId) -> Self {
 		self.filter(|u| u.type_id() == unit_type)
 	}
+	/// Leaves only units of given type and makes a new collection of them and its aliases.
+	///
+	/// Warning: This method will clone units in order to create a new collection
+	/// and will be evaluated initially. When applicable prefer using [`of_type_and_alias`]
+	/// on the iterator over units, since it's lazily evaluated and doesn't do any cloning operations.
+	///
+	/// [`of_type`]: UnitsIterator::of_type
+	pub fn of_type_including_alias(&self, unit_type: UnitTypeId) -> Self {
+		self.filter(|u| u.type_id() == unit_type || u.type_id() == UNIT_ALIAS[unit_type])
+	}
 	/// Excludes all units of given type and makes a new collection of remaining units.
 	///
 	/// Warning: This method will clone units in order to create a new collection
@@ -691,6 +701,7 @@ use std::{
 	collections::{BTreeMap, BTreeSet, HashMap, HashSet},
 	hash::{BuildHasher, Hash},
 };
+use crate::consts::UNIT_ALIAS;
 
 impl<T: PartialEq> Container<T> for &[T] {
 	fn contains(&self, other: &T) -> bool {
