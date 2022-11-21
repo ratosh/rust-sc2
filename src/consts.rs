@@ -754,6 +754,35 @@ lazy_static! {
 		UnitTypeId::Roach => (UpgradeId::GlialReconstitution, 1.333_333_4),
 		UnitTypeId::LurkerMP => (UpgradeId::DiggingClaws, 1.1),
 	];
+
+	pub static ref BURROW_DOWN_ABILITY: HashMap<UnitTypeId, AbilityId> = hashmap![
+		UnitTypeId::LurkerMP => AbilityId::BurrowDownLurker,
+		UnitTypeId::Baneling => AbilityId::BurrowDownBaneling,
+		UnitTypeId::Drone => AbilityId::BurrowDownDrone,
+		UnitTypeId::Hydralisk => AbilityId::BurrowDownHydralisk,
+		UnitTypeId::Roach => AbilityId::BurrowDownRoach,
+		UnitTypeId::Zergling => AbilityId::BurrowDownZergling,
+		UnitTypeId::Queen => AbilityId::BurrowDownQueen,
+		UnitTypeId::Infestor => AbilityId::BurrowDownInfestor,
+		UnitTypeId::Ultralisk => AbilityId::BurrowDownUltralisk,
+		UnitTypeId::SwarmHostMP => AbilityId::BurrowDownSwarmHost,
+		UnitTypeId::Ravager => AbilityId::BurrowDownRavager,
+	];
+
+	pub static ref BURROW_UP_ABILITY: HashMap<UnitTypeId, AbilityId> = hashmap![
+		UnitTypeId::LurkerMPBurrowed => AbilityId::BurrowUpLurker,
+		UnitTypeId::BanelingBurrowed => AbilityId::BurrowUpBaneling,
+		UnitTypeId::DroneBurrowed => AbilityId::BurrowUpDrone,
+		UnitTypeId::HydraliskBurrowed => AbilityId::BurrowUpHydralisk,
+		UnitTypeId::RoachBurrowed => AbilityId::BurrowUpRoach,
+		UnitTypeId::ZerglingBurrowed => AbilityId::BurrowUpZergling,
+		UnitTypeId::QueenBurrowed => AbilityId::BurrowUpQueen,
+		UnitTypeId::InfestorBurrowed => AbilityId::BurrowUpInfestor,
+		UnitTypeId::UltraliskBurrowed => AbilityId::BurrowUpUltralisk,
+		UnitTypeId::SwarmHostBurrowedMP => AbilityId::BurrowUpSwarmHost,
+		UnitTypeId::RavagerBurrowed => AbilityId::BurrowUpRavager,
+	];
+
 	pub(crate) static ref OFF_CREEP_SPEED_UPGRADES: HashMap<UnitTypeId, (UpgradeId, f32)> = hashmap![
 		UnitTypeId::Hydralisk => (UpgradeId::EvolveMuscularAugments, 1.25),
 		UnitTypeId::Ultralisk => (UpgradeId::AnabolicSynthesis, 1.2),
