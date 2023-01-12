@@ -264,7 +264,11 @@ impl Units {
 	///
 	/// [`of_type`]: UnitsIterator::of_type
 	pub fn of_type_including_alias(&self, unit_type: UnitTypeId) -> Self {
-		self.filter(|u| u.type_id() == unit_type || u.type_id() == UNIT_ALIAS[&unit_type])
+		self.filter(|u| if let Some(alias) = UNIT_ALIAS.get(&unit_type) {
+			u.type_id() == unit_type || u.type_id() == alias
+		} else {
+			u.type_id() == unit_type
+		})
 	}
 	/// Excludes all units of given type and makes a new collection of remaining units.
 	///
