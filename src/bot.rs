@@ -903,8 +903,8 @@ impl Bot {
 							if self.is_placeable((pos.x as usize, pos.y as usize)) {
 								let mut distance_sum = 0_f32;
 								let far_enough = |r: &Unit| {
-									let dist = pos.distance_squared(r);
-									distance_sum += dist;
+									let dist = pos.distance(r);
+									distance_sum += dist.sqrt();
 									dist >= if r.is_geyser() { 49.0 } else { 36.0 }
 								};
 								if resources.iter().all(far_enough) {
