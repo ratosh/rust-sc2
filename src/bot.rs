@@ -903,7 +903,7 @@ impl Bot {
 							if self.is_placeable((pos.x as usize, pos.y as usize)) {
 								let mut distance_sum = 0_f32;
 								let far_enough = |r: &Unit| {
-									let dist = pos.distance(r);
+									let dist = pos.distance_squared(r);
 									distance_sum += dist.sqrt();
 									dist >= if r.is_geyser() { 49.0 } else { 36.0 }
 								};
@@ -916,7 +916,6 @@ impl Bot {
 						.min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).unwrap())
 						.expect("Can't detect right position for expansion")
 						.0;
-
 					(
 						location,
 						(resources.sum(|r| r.position()) + location) / (resources.len() + 1) as f32,
