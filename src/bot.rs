@@ -848,8 +848,7 @@ impl Bot {
 			(resources.sum(|r| r.position()) + self.enemy_start) / (resources.len() + 1) as f32;
 
 		// Calculating expansion locations
-
-		const RESOURCE_SPREAD: f32 = 72.25; // 8.5
+		const RESOURCE_SPREAD: f32 = 51.84f32; // 7.2
 
 		let all_resources = self
 			.units
