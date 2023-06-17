@@ -735,6 +735,10 @@ impl Bot {
 			.copied()
 			.unwrap_or(0)
 	}
+	/// Returns terrain height difference between 2 points
+	pub fn get_height_diff<P: Into<(usize, usize)>>(&self, p1: P, p2: P) -> u8 {
+		self.get_height(p1).abs_diff(self.get_height(p2))
+	}
 	/// Checks if it's possible to build on given position.
 	pub fn is_placeable<P: Into<(usize, usize)>>(&self, pos: P) -> bool {
 		self.game_info
@@ -848,7 +852,8 @@ impl Bot {
 			(resources.sum(|r| r.position()) + self.enemy_start) / (resources.len() + 1) as f32;
 
 		// Calculating expansion locations
-		const RESOURCE_SPREAD: f32 = 51.84f32; // 7.2
+		const RESOURCE_SPREAD: f32 = 72.25; // 8.5
+		const HEIGHT_DIFFERENCE: u8 = 0; // SAME HEIGHT
 
 		let all_resources = self
 			.units
@@ -865,7 +870,9 @@ impl Bot {
 			range_query(
 				&positions,
 				|(p1, _), (p2, _)| p1.distance_squared(*p2),
+				|(p1, _), (p2, _)| self.get_height_diff(*p1, *p2),
 				RESOURCE_SPREAD,
+				HEIGHT_DIFFERENCE,
 			),
 			1,
 		)

@@ -63,18 +63,28 @@ where
 /// Takes:
 /// - `data`: iterable collection of points (the same data should be passed in [`dbscan`]).
 /// - `distance`: function that should returns distance between 2 given points.
-/// - `epsilon`: maximum distance between neighbors.
-pub fn range_query<'a, DT, P, D, F>(data: DT, distance: F, epsilon: D) -> impl Fn(&P) -> FxIndexSet<P>
+/// - `height`: function that should returns height difference between 2 given points.
+/// - `distance_epsilon`: maximum distance between neighbors.
+/// - `distance_epsilon`: maximum height difference between neighbors.
+pub fn range_query<'a, DT, P, D, F, K, F2>(
+	data: DT,
+	distance: F,
+	height: F2,
+	distance_epsilon: D,
+	height_epsilon: K,
+) -> impl Fn(&P) -> FxIndexSet<P>
 where
 	DT: IntoIterator<Item = &'a P> + Clone,
 	P: Eq + Hash + Clone + 'a,
 	D: PartialOrd,
 	F: Fn(&P, &P) -> D,
+	K: PartialOrd,
+	F2: Fn(&P, &P) -> K,
 {
 	move |q: &P| {
 		data.clone()
 			.into_iter()
-			.filter(|p| distance(q, p) <= epsilon)
+			.filter(|p| distance(q, p) <= distance_epsilon && height(q, p) <= height_epsilon)
 			.cloned()
 			.collect()
 	}
