@@ -5,8 +5,10 @@ use sc2_proto::score::{CategoryScoreDetails, Score as ProtoScore, Score_ScoreTyp
 
 #[variant_checkers]
 #[derive(Clone)]
+#[derive(Default)]
 pub enum ScoreType {
-	Curriculum,
+	#[default]
+ Curriculum,
 	Melee,
 }
 impl FromProto<Score_ScoreType> for ScoreType {
@@ -17,11 +19,7 @@ impl FromProto<Score_ScoreType> for ScoreType {
 		}
 	}
 }
-impl Default for ScoreType {
-	fn default() -> Self {
-		ScoreType::Curriculum
-	}
-}
+
 
 #[derive(Default, Clone)]
 pub struct Category {

@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 #[variant_checkers]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, FromStr)]
+#[derive(Default)]
 pub enum Race {
 	/// Brutal mens, who try to survive in this world.
 	Terran,
@@ -25,7 +26,8 @@ pub enum Race {
 	/// Kinda high-tech guys, who build cannons and batteries near your base "just for scouting".
 	Protoss,
 	/// Use when you didn't decide your race yet or just want to play them all.
-	Random,
+	#[default]
+ Random,
 }
 impl FromProto<ProtoRace> for Race {
 	fn from_proto(race: ProtoRace) -> Self {
@@ -48,11 +50,7 @@ impl IntoProto<ProtoRace> for Race {
 		}
 	}
 }
-impl Default for Race {
-	fn default() -> Self {
-		Race::Random
-	}
-}
+
 
 /// Difficulty of in-game AI.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -106,8 +104,10 @@ impl IntoProto<ProtoDifficulty> for Difficulty {
 /// Strategy build of in-game AI.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Copy, Clone, FromStr)]
+#[derive(Default)]
 pub enum AIBuild {
-	RandomBuild,
+	#[default]
+ RandomBuild,
 	Rush,
 	Timing,
 	Power,
@@ -138,11 +138,7 @@ impl IntoProto<ProtoAIBuild> for AIBuild {
 		}
 	}
 }
-impl Default for AIBuild {
-	fn default() -> Self {
-		AIBuild::RandomBuild
-	}
-}
+
 
 /// Type of the player, used when joining a game.
 #[derive(Copy, Clone, PartialEq, Eq)]
