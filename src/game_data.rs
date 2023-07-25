@@ -68,7 +68,7 @@ impl FromProto<ResponseData> for GameData {
 }
 
 /// Cost of an item (`UnitTypeId` or `UpgradeId`) in resources, supply and time.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Cost {
 	pub minerals: u32,
@@ -154,7 +154,7 @@ impl FromProto<Weapon_TargetType> for TargetType {
 }
 
 /// Weapon's characteristic.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Weapon {
 	/// Possible targets.

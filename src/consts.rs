@@ -767,6 +767,7 @@ lazy_static! {
 		UnitTypeId::Ultralisk => AbilityId::BurrowDownUltralisk,
 		UnitTypeId::SwarmHostMP => AbilityId::BurrowDownSwarmHost,
 		UnitTypeId::Ravager => AbilityId::BurrowDownRavager,
+		UnitTypeId::WidowMine => AbilityId::BurrowDownWidowMine,
 	];
 
 	pub static ref BURROW_UP_ABILITY: HashMap<UnitTypeId, AbilityId> = hashmap![
@@ -781,6 +782,7 @@ lazy_static! {
 		UnitTypeId::UltraliskBurrowed => AbilityId::BurrowUpUltralisk,
 		UnitTypeId::SwarmHostBurrowedMP => AbilityId::BurrowUpSwarmHost,
 		UnitTypeId::RavagerBurrowed => AbilityId::BurrowUpRavager,
+		UnitTypeId::WidowMineBurrowed => AbilityId::BurrowUpWidowMine,
 	];
 
 	pub(crate) static ref OFF_CREEP_SPEED_UPGRADES: HashMap<UnitTypeId, (UpgradeId, f32)> = hashmap![
