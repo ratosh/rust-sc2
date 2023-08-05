@@ -1699,6 +1699,15 @@ impl Unit {
 			_ => false,
 		})
 	}
+
+	/// Checks if worker is currently constructing a specific building.
+	///
+	/// Doesn't work with enemies.
+	pub fn is_constructing_any(&self, unit_types: &Vec<UnitTypeId>) -> bool {
+		unit_types.iter().map(|t| self.data.game_data.units.get(t).and_then(|data| data.ability))
+			.any(|a| a.is_some() && self.is_using(a.unwrap()))
+	}
+
 	/// Checks if terran building is currently making addon.
 	///
 	/// Doesn't work with enemies.
