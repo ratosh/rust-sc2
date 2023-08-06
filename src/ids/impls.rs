@@ -3,7 +3,7 @@ use super::{AbilityId, UnitTypeId};
 impl UnitTypeId {
 	#[inline]
 	pub fn is_worker(self) -> bool {
-		matches!(self, UnitTypeId::SCV | UnitTypeId::Drone | UnitTypeId::Probe)
+		matches!(self, UnitTypeId::SCV | UnitTypeId::Drone | UnitTypeId::DroneBurrowed | UnitTypeId::Probe)
 	}
 	#[rustfmt::skip::macros(matches)]
 	#[inline]

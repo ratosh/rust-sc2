@@ -1237,10 +1237,10 @@ impl Bot {
 						}
 					} else {
 						add_to!(units.units);
-						match u.type_id() {
-							UnitTypeId::SCV | UnitTypeId::Probe | UnitTypeId::Drone => add_to!(units.workers),
-							UnitTypeId::Larva => add_to!(units.larvas),
-							_ => {}
+						if u.is_worker() {
+							add_to!(units.workers);
+						} else if matches!(u.type_id(), UnitTypeId::Larva) {
+							add_to!(units.larvas);
 						}
 					}
 				}
@@ -1280,10 +1280,10 @@ impl Bot {
 						}
 					} else {
 						add_to!(units.units);
-						match u.type_id() {
-							UnitTypeId::SCV | UnitTypeId::Probe | UnitTypeId::Drone => add_to!(units.workers),
-							UnitTypeId::Larva => add_to!(units.larvas),
-							_ => {}
+						if u.is_worker() {
+							add_to!(units.workers);
+						} else if matches!(u.type_id(), UnitTypeId::Larva) {
+							add_to!(units.larvas);
 						}
 					}
 				}
