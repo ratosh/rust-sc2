@@ -628,6 +628,10 @@ impl Unit {
 	pub fn supply_cost(&self) -> f32 {
 		self.type_data().map_or(0.0, |data| data.food_required)
 	}
+	/// Returns how much supply this unit uses.
+	pub fn supply_provided(&self) -> f32 {
+		self.type_data().map_or(0.0, |data| data.food_provided)
+	}
 	/// Returns cost of unit.
 	pub fn cost(&self) -> Cost {
 		self.type_data().map_or(Cost::default(), |data| data.cost())
