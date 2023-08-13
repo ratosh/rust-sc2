@@ -419,7 +419,7 @@ impl Unit {
 	fn type_data(&self) -> Option<&UnitTypeData> {
 		self.data.game_data.units.get(&self.type_id())
 	}
-	fn upgrades(&self) -> Reader<FxHashSet<UpgradeId>> {
+	pub fn upgrades(&self) -> Reader<FxHashSet<UpgradeId>> {
 		if self.is_mine() {
 			self.data.upgrades.read_lock()
 		} else {
