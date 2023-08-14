@@ -684,7 +684,7 @@ lazy_static! {
 		UpgradeId::EnhancedShockwaves => UnitTypeId::GhostAcademy,
 	];
 	/// Researchers mapped to upgrades.
-	pub static ref ALL_RESEARCHERS: HashMap<UpgradeId, UnitTypeId> = hashmap![
+	pub static ref ALL_RESEARCHERS: HashMap<UpgradeId, Vec<UnitTypeId>> = hashmap![
 		UpgradeId::AdeptPiercingAttack => vec![UnitTypeId::TwilightCouncil],
 		UpgradeId::AnabolicSynthesis => vec![UnitTypeId::UltraliskCavern],
 		UpgradeId::BansheeCloak => vec![UnitTypeId::StarportTechLab],
