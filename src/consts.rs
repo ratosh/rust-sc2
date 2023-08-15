@@ -682,6 +682,8 @@ lazy_static! {
 		UpgradeId::ZergMissileWeaponsLevel2 => UnitTypeId::EvolutionChamber,
 		UpgradeId::ZergMissileWeaponsLevel3 => UnitTypeId::EvolutionChamber,
 		UpgradeId::EnhancedShockwaves => UnitTypeId::GhostAcademy,
+		UpgradeId::TunnelingClaws => UnitTypeId::RoachWarren,
+		UpgradeId::GlialReconstitution => UnitTypeId::RoachWarren,
 	];
 	/// Researchers mapped to upgrades.
 	pub static ref ALL_RESEARCHERS: HashMap<UpgradeId, Vec<UnitTypeId>> = hashmap![
@@ -768,6 +770,8 @@ lazy_static! {
 		UpgradeId::ZergMissileWeaponsLevel2 => vec![UnitTypeId::EvolutionChamber],
 		UpgradeId::ZergMissileWeaponsLevel3 => vec![UnitTypeId::EvolutionChamber],
 		UpgradeId::EnhancedShockwaves => vec![UnitTypeId::GhostAcademy],
+		UpgradeId::TunnelingClaws => vec![UnitTypeId::RoachWarren],
+		UpgradeId::GlialReconstitution => vec![UnitTypeId::RoachWarren],
 	];
 
 	pub static ref DAMAGE_BONUS_PER_UPGRADE: HashMap<UnitTypeId, BonusesForTarget> = hashmap![
