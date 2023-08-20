@@ -684,6 +684,7 @@ lazy_static! {
 		UpgradeId::EnhancedShockwaves => UnitTypeId::GhostAcademy,
 		UpgradeId::TunnelingClaws => UnitTypeId::RoachWarren,
 		UpgradeId::GlialReconstitution => UnitTypeId::RoachWarren,
+		UpgradeId::CentrificalHooks => UnitTypeId::BanelingNest,
 	];
 	/// Researchers mapped to upgrades.
 	pub static ref ALL_RESEARCHERS: HashMap<UpgradeId, Vec<UnitTypeId>> = hashmap![
@@ -772,6 +773,7 @@ lazy_static! {
 		UpgradeId::EnhancedShockwaves => vec![UnitTypeId::GhostAcademy],
 		UpgradeId::TunnelingClaws => vec![UnitTypeId::RoachWarren],
 		UpgradeId::GlialReconstitution => vec![UnitTypeId::RoachWarren],
+		UpgradeId::CentrificalHooks => vec![UnitTypeId::BanelingNest],
 	];
 
 	pub static ref DAMAGE_BONUS_PER_UPGRADE: HashMap<UnitTypeId, BonusesForTarget> = hashmap![
