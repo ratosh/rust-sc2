@@ -409,6 +409,7 @@ pub fn run_ladder_game<B>(
 	port: i32,
 	player_port: i32,
 	opponent_id: Option<&str>,
+	real_time: bool,
 ) -> SC2Result<()>
 where
 	B: Player + DerefMut<Target = Bot> + Deref<Target = Bot>,
@@ -440,8 +441,8 @@ where
 	debug!("Entered main loop");
 	// Main loop
 	let mut iteration = 0;
-	play_first_step(bot, false)?;
-	while play_step(bot, iteration, false)? {
+	play_first_step(bot, real_time)?;
+	while play_step(bot, iteration, real_time)? {
 		iteration += 1;
 	}
 	debug!("Game finished");
