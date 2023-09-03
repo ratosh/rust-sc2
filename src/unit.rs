@@ -1102,6 +1102,15 @@ impl Unit {
 						return w.range + 1.0;
 					}
 				}
+				UnitTypeId::Ghost => {
+					// TODO: Is it possible to get energy cost from Ability data?
+					let ability = self.data.game_data.abilities.get(&AbilityId::EffectGhostSnipe).unwrap();
+					return if self.energy().unwrap_or_default() >= 50 {
+						ability.cast_range.unwrap_or_default()
+					} else {
+						w.range
+					}
+				}
 				_ => {}
 			}
 			w.range
