@@ -1094,22 +1094,34 @@ impl Unit {
 				}
 				UnitTypeId::Phoenix => {
 					if upgrades.contains(&UpgradeId::PhoenixRangeUpgrade) {
-						return w.range + 2.0;
+						return w.range + 2f32;
 					}
 				}
 				UnitTypeId::PlanetaryFortress | UnitTypeId::MissileTurret | UnitTypeId::AutoTurret => {
 					if upgrades.contains(&UpgradeId::HiSecAutoTracking) {
-						return w.range + 1.0;
+						return w.range + 1f32;
+					}
+				}
+				UnitTypeId::Colossus => {
+					if upgrades.contains(&UpgradeId::ExtendedThermalLance) {
+						return w.range + 2f32;
 					}
 				}
 				UnitTypeId::Ghost => {
 					// TODO: Is it possible to get energy cost from Ability data?
-					let ability = self.data.game_data.abilities.get(&AbilityId::EffectGhostSnipe).unwrap();
-					return if self.energy().unwrap_or_default() >= 50 {
+					let ability = self
+						.data
+						.game_data
+						.abilities
+						.get(&AbilityId::EffectGhostSnipe)
+						.unwrap();
+					return if self.has_buff(BuffId::ChannelSnipeCombat) {
+						ability.cast_range.unwrap_or_default() + 4f32
+					} else if self.energy().unwrap_or_default() >= 50 {
 						ability.cast_range.unwrap_or_default()
 					} else {
 						w.range
-					}
+					};
 				}
 				_ => {}
 			}
@@ -1717,7 +1729,9 @@ impl Unit {
 	///
 	/// Doesn't work with enemies.
 	pub fn is_constructing_any(&self, unit_types: &Vec<UnitTypeId>) -> bool {
-		unit_types.iter().map(|t| self.data.game_data.units.get(t).and_then(|data| data.ability))
+		unit_types
+			.iter()
+			.map(|t| self.data.game_data.units.get(t).and_then(|data| data.ability))
 			.any(|a| a.is_some() && self.is_using(a.unwrap()))
 	}
 

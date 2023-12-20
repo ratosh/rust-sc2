@@ -78,15 +78,14 @@ impl FromProto<&ImageData> for VisibilityMap {
 
 /// Base for the most 2d maps.
 #[variant_checkers]
-#[derive(FromPrimitive, ToPrimitive, Copy, Clone, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(FromPrimitive, ToPrimitive, Copy, Clone, PartialEq, Eq, Default)]
 pub enum Pixel {
 	/// When pixel is set, this tile is obstacle (e.g. not pathable | not placeable)
 	/// or has something on it (e.g. has creep).
 	Set,
 	/// When pixel is empty, this tile is free (e.g. pathable | placeable | no creep).
 	#[default]
- Empty,
+	Empty,
 }
 
 impl fmt::Debug for Pixel {
@@ -100,12 +99,11 @@ impl fmt::Debug for Pixel {
 
 /// Base for visibility maps.
 #[variant_checkers]
-#[derive(Debug, FromPrimitive, ToPrimitive, Copy, Clone, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, FromPrimitive, ToPrimitive, Copy, Clone, PartialEq, Eq, Default)]
 pub enum Visibility {
 	/// Position is hidden (i.e. weren't explored before)
 	#[default]
- Hidden,
+	Hidden,
 	/// Position is in fog of war (i.e. was explored before, but not visible now)
 	Fogged,
 	/// Position is visible now.
@@ -118,4 +116,3 @@ impl Visibility {
 		!matches!(self, Visibility::Hidden)
 	}
 }
-

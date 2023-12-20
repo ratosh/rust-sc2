@@ -957,14 +957,26 @@ impl Bot {
 
 		// Sort expansions by distance to start location
 		let start = Target::Pos(self.start_location);
-		let paths = self
+		let my_paths = self
 			.query_pathing(expansions.iter().map(|exp| (start, exp.loc)).collect())
 			.unwrap();
+		let enemy_start = Target::Pos(self.enemy_start);
+		let enemy_paths = self
+			.query_pathing(expansions.iter().map(|exp| (enemy_start, exp.loc)).collect())
+			.unwrap();
+
+		let paths: Vec<f32> = my_paths
+			.iter()
+			.zip(enemy_paths.into_iter())
+			.map(|(my_path, enemy_path)| {
+				my_path.unwrap_or(f32::INFINITY) * 2f32 - enemy_path.unwrap_or(f32::INFINITY)
+			})
+			.collect();
 
 		let paths = expansions
 			.iter()
 			.zip(paths.into_iter())
-			.map(|(exp, path)| (exp.loc, path.unwrap_or(f32::INFINITY)))
+			.map(|(exp, path)| (exp.loc, path))
 			.collect::<FxHashMap<Point2, f32>>();
 
 		expansions.sort_unstable_by(|a, b| paths[&a.loc].partial_cmp(&paths[&b.loc]).unwrap());
