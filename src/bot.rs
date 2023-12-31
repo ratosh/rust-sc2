@@ -11,7 +11,7 @@ use crate::{
 	game_info::GameInfo,
 	game_state::Effect,
 	game_state::{Alliance, GameState},
-	geometry::Point2,
+	geometry::{Point2, Point3},
 	ids::{AbilityId, EffectId, UnitTypeId, UpgradeId},
 	player::Race,
 	ramp::{Ramp, Ramps},
@@ -390,6 +390,7 @@ pub struct Bot {
 	pub(crate) process: Option<Child>,
 	pub(crate) api: Option<API>,
 	pub(crate) game_step: Rs<LockU32>,
+	pub(crate) game_left: bool,
 	#[doc(hidden)]
 	pub disable_fog: bool,
 	/// Actual race of your bot.
@@ -716,6 +717,10 @@ impl Bot {
 			})
 			.unwrap_or(0.0)
 	}
+	/// Move player camera to specified position.
+	pub fn move_camera(&mut self, pos: Point3) {
+		self.actions.push(Action::CameraMove(pos));
+	}
 	/// Sends message to in-game chat.
 	pub fn chat(&mut self, message: &str) {
 		self.actions.push(Action::Chat(message.to_string(), false));
@@ -979,8 +984,8 @@ impl Bot {
 
 		let paths = expansions
 			.iter()
-			.zip(paths.into_iter())
-			.map(|(exp, path)| (exp.loc, path))
+			.zip(paths)
+			.map(|(exp, path)| (exp.loc, path.unwrap_or(f32::INFINITY)))
 			.collect::<FxHashMap<Point2, f32>>();
 
 		expansions.sort_unstable_by(|a, b| paths[&a.loc].partial_cmp(&paths[&b.loc]).unwrap());
