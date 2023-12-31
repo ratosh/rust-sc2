@@ -670,6 +670,10 @@ impl Bot {
 	pub fn has_upgrade(&self, upgrade: UpgradeId) -> bool {
 		self.state.observation.raw.upgrades.read_lock().contains(&upgrade)
 	}
+	/// Returns a set of upgrades.
+	pub fn upgrades(&self) -> Reader<FxHashSet<UpgradeId>> {
+		self.state.observation.raw.upgrades.read_lock()
+	}
 	/// Checks if predicted opponent's upgrades contains given upgrade.
 	pub fn enemy_has_upgrade(&self, upgrade: UpgradeId) -> bool {
 		self.enemy_upgrades.read_lock().contains(&upgrade)
