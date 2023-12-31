@@ -985,7 +985,7 @@ impl Bot {
 		let paths = expansions
 			.iter()
 			.zip(paths)
-			.map(|(exp, path)| (exp.loc, path.unwrap_or(f32::INFINITY)))
+			.map(|(exp, path)| (exp.loc, path))
 			.collect::<FxHashMap<Point2, f32>>();
 
 		expansions.sort_unstable_by(|a, b| paths[&a.loc].partial_cmp(&paths[&b.loc]).unwrap());
@@ -1658,7 +1658,7 @@ impl Bot {
 
 		geysers
 			.into_iter()
-			.zip(results.into_iter())
+			.zip(results)
 			.find(|(_, res)| *res == ActionResult::Success)
 			.map(|(geyser, _)| geyser)
 	}
@@ -1679,7 +1679,7 @@ impl Bot {
 
 		expansions
 			.into_iter()
-			.zip(paths.into_iter())
+			.zip(paths)
 			.filter_map(|(exp, path)| Some((exp, path?)))
 			.min_by(|(_, path1), (_, path2)| path1.partial_cmp(path2).unwrap())
 			.map(|(exp, _)| exp)
@@ -1772,10 +1772,9 @@ impl Bot {
 	///
 	/// [`on_end`]: crate::Player::on_end
 	/// [`debug.end_game`]: Debugger::end_game
-	pub fn leave(&self) -> SC2Result<()> {
-		let mut req = Request::new();
-		req.mut_leave_game();
-		self.api().send_request(req)
+	pub fn leave(&mut self) -> SC2Result<()> {
+		self.game_left = true;
+		Ok(())
 	}
 
 	pub(crate) fn close_client(&mut self) {
@@ -1805,6 +1804,7 @@ impl Default for Bot {
 	fn default() -> Self {
 		Self {
 			game_step: Rs::new(LockU32::new(1)),
+			game_left: false,
 			disable_fog: false,
 			race: Race::Random,
 			enemy_race: Race::Random,
