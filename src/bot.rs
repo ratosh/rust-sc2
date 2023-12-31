@@ -685,10 +685,11 @@ impl Bot {
 	}
 	/// Checks if upgrade is in progress.
 	pub fn is_ordered_upgrade(&self, upgrade: UpgradeId) -> bool {
-		let ability = self.game_data.upgrades[&upgrade].ability;
-		self.orders
-			.get(&ability)
-			.copied()
+		// NOTE: Removed upgrades will return false
+		self.game_data
+			.upgrades
+			.get(&upgrade)
+			.and_then(|a| self.orders.get(&a.ability).copied())
 			.map_or(false, |count| count > 0)
 	}
 	/// Returns progress of making given upgrade.
