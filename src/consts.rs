@@ -119,6 +119,8 @@ lazy_static! {
 		UnitTypeId::Ultralisk => UnitTypeId::UltraliskBurrowed,
 		UnitTypeId::SwarmHostMP => UnitTypeId::SwarmHostBurrowedMP,
 		UnitTypeId::Ravager => UnitTypeId::RavagerBurrowed,
+		UnitTypeId::SpineCrawlerUprooted => UnitTypeId::SpineCrawler,
+		UnitTypeId::SporeCrawlerUprooted => UnitTypeId::SporeCrawler,
 	];
 	pub(crate) static ref TECH_ALIAS: HashMap<UnitTypeId, Vec<UnitTypeId>> = hashmap![
 		UnitTypeId::Assimilator => vec![UnitTypeId::AssimilatorRich],
@@ -210,7 +212,7 @@ lazy_static! {
 		UnitTypeId::WidowMine => vec![UnitTypeId::WidowMineBurrowed],
 		UnitTypeId::WidowMineBurrowed => vec![UnitTypeId::WidowMine],
 	];
-	pub(crate) static ref UNIT_ALIAS: HashMap<UnitTypeId, UnitTypeId> = hashmap![
+	pub static ref UNIT_ALIAS: HashMap<UnitTypeId, UnitTypeId> = hashmap![
 		UnitTypeId::Adept => UnitTypeId::AdeptPhaseShift,
 		UnitTypeId::AdeptPhaseShift => UnitTypeId::Adept,
 		UnitTypeId::Assimilator => UnitTypeId::AssimilatorRich,
@@ -298,7 +300,7 @@ lazy_static! {
 	///
 	/// Basic usage:
 	/// ```
-	/// if let Some(requirment) = TECH_REQUIREMENTS.get(unit_type) {
+	/// if let Some(requirement) = TECH_REQUIREMENTS.get(unit_type) {
 	///     /* do what you like */
 	/// }
 	/// ```
@@ -860,6 +862,8 @@ lazy_static! {
 		UnitTypeId::SwarmHostMP => AbilityId::BurrowDownSwarmHost,
 		UnitTypeId::Ravager => AbilityId::BurrowDownRavager,
 		UnitTypeId::WidowMine => AbilityId::BurrowDownWidowMine,
+		UnitTypeId::SpineCrawlerUprooted => AbilityId::SpineCrawlerRootSpineCrawlerRoot,
+		UnitTypeId::SporeCrawlerUprooted => AbilityId::SporeCrawlerRootSporeCrawlerRoot,
 	];
 
 	pub static ref BURROW_UP_ABILITY: HashMap<UnitTypeId, AbilityId> = hashmap![
@@ -875,6 +879,8 @@ lazy_static! {
 		UnitTypeId::SwarmHostBurrowedMP => AbilityId::BurrowUpSwarmHost,
 		UnitTypeId::RavagerBurrowed => AbilityId::BurrowUpRavager,
 		UnitTypeId::WidowMineBurrowed => AbilityId::BurrowUpWidowMine,
+		UnitTypeId::SpineCrawler => AbilityId::SpineCrawlerUprootSpineCrawlerUproot,
+		UnitTypeId::SporeCrawler => AbilityId::SporeCrawlerUprootSporeCrawlerUproot,
 	];
 
 	pub(crate) static ref OFF_CREEP_SPEED_UPGRADES: HashMap<UnitTypeId, (UpgradeId, f32)> = hashmap![
