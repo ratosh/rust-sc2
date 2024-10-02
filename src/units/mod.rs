@@ -557,7 +557,7 @@ where
 	T: PartialOrd,
 	F: Fn(&V) -> T,
 {
-	move |_, a, _, b| f(a).partial_cmp(&f(b)).unwrap()
+	move |_, a, _, b| f(a).partial_cmp(&f(b)).unwrap_or(Ordering::Equal)
 }
 
 #[cfg(not(feature = "rayon"))]

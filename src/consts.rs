@@ -846,7 +846,9 @@ lazy_static! {
 		UnitTypeId::Zergling => (UpgradeId::Zerglingmovementspeed, 1.6),
 		UnitTypeId::Baneling => (UpgradeId::CentrificalHooks, 1.18),
 		UnitTypeId::Roach => (UpgradeId::GlialReconstitution, 1.333_333_4),
+		UnitTypeId::Hydralisk => (UpgradeId::HydraliskSpeedUpgrade, 1.25f32),
 		UnitTypeId::LurkerMP => (UpgradeId::DiggingClaws, 1.1),
+		UnitTypeId::Ultralisk => (UpgradeId::AnabolicSynthesis, 1.2f32),
 	];
 
 	pub static ref BURROW_DOWN_ABILITY: HashMap<UnitTypeId, AbilityId> = hashmap![

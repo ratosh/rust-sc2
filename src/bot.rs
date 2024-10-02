@@ -12,7 +12,7 @@ use crate::{
 	game_state::Effect,
 	game_state::{Alliance, GameState},
 	geometry::{Point2, Point3},
-	ids::{AbilityId, EffectId, UnitTypeId, UpgradeId},
+	ids::{AbilityId, BuffId, EffectId, UnitTypeId, UpgradeId},
 	player::Race,
 	ramp::{Ramp, Ramps},
 	unit::{DataForUnit, SharedUnitData, Unit},
@@ -790,6 +790,23 @@ impl Bot {
 			.get(pos.into())
 			.map_or(false, |p| p.is_visible())
 	}
+	pub fn is_surround_visible<P: Into<(usize, usize)>>(&self, pos: P, range: isize) -> bool {
+		let center = pos.into();
+		for x in -range..range {
+			for y in -range..range {
+				let point = (
+					x.saturating_add(center.0 as isize) as usize,
+					y.saturating_add(center.1 as isize) as usize,
+				);
+				println!("{point:?} Visibility check");
+				if !self.is_visible(point) {
+					println!("{point:?} Not visible");
+					return false;
+				}
+			}
+		}
+		true
+	}
 	/// Checks if given position is fully hidden
 	/// (terrain isn't visible, only darkness; only in campain and custom maps).
 	pub fn is_full_hidden<P: Into<(usize, usize)>>(&self, pos: P) -> bool {
@@ -1400,18 +1417,28 @@ impl Bot {
 									|| (s.type_id() == UnitTypeId::Extractor && s.is_ready()))
 									&& u.is_closer(u.radius() + s.radius() + 1.0, s)
 							};
+							let is_transport_close = |s: &Unit| {
+								(matches!(
+									s.type_id(),
+									UnitTypeId::Medivac
+										| UnitTypeId::WarpPrism | UnitTypeId::WarpPrismPhasing
+										| UnitTypeId::OverlordTransport
+								) && s.is_ready()) && u.is_closer(u.radius() + s.radius() + 1.5f32, s)
+							};
 							if enemy_is_zerg
 								&& !(u.is_flying()
-									|| matches!(
+									|| (matches!(
 										u.type_id(),
 										UnitTypeId::Changeling
 											| UnitTypeId::ChangelingZealot | UnitTypeId::ChangelingMarineShield
 											| UnitTypeId::ChangelingMarine | UnitTypeId::ChangelingZerglingWings
 											| UnitTypeId::ChangelingZergling | UnitTypeId::Broodling
 											| UnitTypeId::Larva | UnitTypeId::Egg
-									) || (u.type_id() == UnitTypeId::Drone
-									&& self.units.enemy.structures.iter().any(is_drone_close)))
-								&& is_invisible(u, &detectors, &scans, 0.0)
+									) && self.units.enemy.units.iter().any(is_transport_close))
+									|| (u.type_id() == UnitTypeId::Drone
+										&& self.units.enemy.structures.iter().any(is_drone_close)))
+								&& is_invisible(u, &detectors, &scans, 0f32)
+								&& self.is_surround_visible(u.position(), 2)
 							{
 								burrowed.push(u.tag());
 							// Whatever
@@ -1518,7 +1545,9 @@ impl Bot {
 
 		if !(enemy_detectors.is_empty() && enemy_scans.is_empty()) {
 			for u in &self.units.my.all {
-				if !(u.is_revealed() || is_invisible(u, &enemy_detectors, &enemy_scans, 1.0)) {
+				if !(u.is_revealed() || is_invisible(u, &enemy_detectors, &enemy_scans, 1.0))
+					|| u.has_buff(BuffId::OracleRevelation)
+				{
 					u.base.is_revealed.set_locked(true);
 				}
 			}

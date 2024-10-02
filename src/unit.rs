@@ -28,6 +28,19 @@ use sc2_proto::raw::{
 	UnitOrder_oneof_target as ProtoTarget,
 };
 
+#[derive(Default, Clone, Copy)]
+pub struct WeaponStats {
+	pub damage: u32,
+	pub speed: f32,
+	pub range: f32,
+}
+
+impl WeaponStats {
+	pub fn dps(&self) -> f32 {
+		self.damage as f32 * self.speed
+	}
+}
+
 #[derive(Default, Clone)]
 pub(crate) struct DataForUnit {
 	pub commander: Rw<Commander>,
@@ -96,7 +109,7 @@ pub(crate) struct UnitBase {
 
 	// cache
 	real_speed: LazyInit<f32>,
-	real_weapon_vs: Lazy<CacheMap<u64, (f32, f32)>>,
+	real_weapon_vs: Lazy<CacheMap<u64, WeaponStats>>,
 }
 
 /// Weapon target used in [`calculate_weapon_stats`](Unit::calculate_weapon_stats).
@@ -1204,21 +1217,21 @@ impl Unit {
 	/// [`real_range_vs`]: Self::real_range_vs
 	/// [`real_ground_range`]: Self::real_ground_range
 	/// [`real_air_range`]: Self::real_air_range
-	pub fn real_weapon(&self, attributes: &[Attribute]) -> (f32, f32) {
+	pub fn real_weapon(&self, attributes: &[Attribute]) -> WeaponStats {
 		self.calculate_weapon_stats(CalcTarget::Abstract(TargetType::Any, attributes))
 	}
 	/// Returns (dps, range) of unit's ground weapon including bonuses from buffs and upgrades.
 	///
 	/// If you need to get only real range of unit, use [`real_ground_range`](Self::real_ground_range)
 	/// instead, because it's generally faster.
-	pub fn real_ground_weapon(&self, attributes: &[Attribute]) -> (f32, f32) {
+	pub fn real_ground_weapon(&self, attributes: &[Attribute]) -> WeaponStats {
 		self.calculate_weapon_stats(CalcTarget::Abstract(TargetType::Ground, attributes))
 	}
 	/// Returns (dps, range) of unit's air weapon including bonuses from buffs and upgrades.
 	///
 	/// If you need to get only real range of unit, use [`real_air_range`](Self::real_air_range)
 	/// instead, because it's generally faster.
-	pub fn real_air_weapon(&self, attributes: &[Attribute]) -> (f32, f32) {
+	pub fn real_air_weapon(&self, attributes: &[Attribute]) -> WeaponStats {
 		self.calculate_weapon_stats(CalcTarget::Abstract(TargetType::Air, attributes))
 	}
 	/// Returns (dps, range) of unit's weapon vs given target if unit can attack it, otherwise returs `(0, 0)`.
@@ -1226,7 +1239,7 @@ impl Unit {
 	///
 	/// If you need to get only real range of unit, use [`real_range_vs`](Self::real_range_vs)
 	/// instead, because it's generally faster.
-	pub fn real_weapon_vs(&self, target: &Unit) -> (f32, f32) {
+	pub fn real_weapon_vs(&self, target: &Unit) -> WeaponStats {
 		self.base.real_weapon_vs.get_or_create(&target.tag(), || {
 			self.calculate_weapon_stats(CalcTarget::Unit(target))
 		})
@@ -1242,7 +1255,11 @@ impl Unit {
 	/// [`real_range_vs`]: Self::real_range_vs
 	/// [`real_ground_range`]: Self::real_ground_range
 	/// [`real_air_range`]: Self::real_air_range
-	pub fn calculate_weapon_abstract(&self, target_type: TargetType, attributes: &[Attribute]) -> (f32, f32) {
+	pub fn calculate_weapon_abstract(
+		&self,
+		target_type: TargetType,
+		attributes: &[Attribute],
+	) -> WeaponStats {
 		self.calculate_weapon_stats(CalcTarget::Abstract(target_type, attributes))
 	}
 
@@ -1256,7 +1273,7 @@ impl Unit {
 	/// [`real_ground_range`]: Self::real_ground_range
 	/// [`real_air_range`]: Self::real_air_range
 	#[allow(clippy::mut_range_bound)]
-	pub fn calculate_weapon_stats(&self, target: CalcTarget) -> (f32, f32) {
+	pub fn calculate_weapon_stats(&self, target: CalcTarget) -> WeaponStats {
 		let (upgrades, target_upgrades) = {
 			let my_upgrades = self.data.upgrades.read_lock();
 			let enemy_upgrades = self.data.enemy_upgrades.read_lock();
@@ -1331,7 +1348,11 @@ impl Unit {
 
 		let weapons = self.weapons();
 		if weapons.is_empty() {
-			return (0.0, 0.0);
+			return WeaponStats {
+				damage: 0,
+				speed: 0f32,
+				range: 0f32,
+			};
 		}
 
 		let mut speed_modifier = 1.0;
@@ -1486,7 +1507,11 @@ impl Unit {
 				.max_by_key(|k| k.0)
 				.unwrap_or((0, 0.0, 0.0))
 		};
-		(if speed == 0.0 { 0.0 } else { damage as f32 / speed }, range)
+		WeaponStats {
+			damage: if speed == 0f32 { 0 } else { damage },
+			speed,
+			range,
+		}
 	}
 
 	/// Checks if unit is close enough to attack given target.
