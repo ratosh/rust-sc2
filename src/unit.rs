@@ -50,6 +50,7 @@ pub(crate) struct DataForUnit {
 	pub race_values: Rs<RaceValues>,
 	pub max_cooldowns: Rw<FxHashMap<UnitTypeId, f32>>,
 	pub last_units_health: Rw<FxHashMap<u64, u32>>,
+	pub last_units_seen: Rw<FxHashMap<u64, u32>>,
 	pub abilities_units: Rw<FxHashMap<u64, FxHashSet<AbilityId>>>,
 	pub upgrades: Rw<FxHashSet<UpgradeId>>,
 	pub enemy_upgrades: Rw<FxHashSet<UpgradeId>>,
@@ -109,6 +110,8 @@ pub(crate) struct UnitBase {
 
 	// cache
 	real_speed: LazyInit<f32>,
+	on_creep_speed: LazyInit<f32>,
+	off_creep_speed: LazyInit<f32>,
 	real_weapon_vs: Lazy<CacheMap<u64, WeaponStats>>,
 }
 
@@ -521,6 +524,10 @@ impl Unit {
 		};
 		last_hits.saturating_sub(hits)
 	}
+	/// Unit was attacked on last step.
+	pub fn time_alive(&self) -> u32 {
+		self.data.game_loop.get_locked().saturating_sub(self.data.last_units_seen.read_lock().get(&self.tag()).copied().unwrap_or_default())
+	}
 	/// Abilities available for unit to use.
 	///
 	/// Ability won't be available if it's on cooldown, unit
@@ -719,8 +726,37 @@ impl Unit {
 	pub fn speed(&self) -> f32 {
 		self.type_data().map_or(0.0, |data| data.movement_speed)
 	}
+	pub fn is_unit_on_creep(&self) -> bool {
+		self.data.creep.read_lock()[self.position()].is_empty()
+	}
+	pub fn on_creep_speed(&self) -> f32 {
+		*self.base.on_creep_speed.get_or_create(|| {
+			let unit_type = self.type_id();
+			let base_speed = self.base_real_speed();
+			// On creep
+			if let Some(increase) = SPEED_ON_CREEP.get(&unit_type) {
+				return base_speed * increase;
+			}
+			base_speed
+		})
+	}
+	pub fn off_creep_speed(&self) -> f32 {
+		*self.base.off_creep_speed.get_or_create(|| {
+			let unit_type = self.type_id();
+
+			// Off creep upgrades
+			let upgrades = self.upgrades();
+			let base_speed = self.base_real_speed();
+			if let Some((upgrade_id, increase)) = OFF_CREEP_SPEED_UPGRADES.get(&unit_type) {
+				if upgrades.contains(upgrade_id) {
+					return base_speed * increase
+				}
+			}
+			base_speed
+		})
+	}
 	/// Returns actual speed of the unit calculated including buffs and upgrades.
-	pub fn real_speed(&self) -> f32 {
+	pub fn base_real_speed(&self) -> f32 {
 		*self.base.real_speed.get_or_create(|| {
 			let mut speed = self.speed();
 			let unit_type = self.type_id();
@@ -749,24 +785,16 @@ impl Unit {
 				}
 			}
 
-			// ---- Creep ----
-			// On creep
-			if self.data.creep.read_lock()[self.position()].is_set() {
-				if let Some(increase) = SPEED_ON_CREEP.get(&unit_type) {
-					speed *= increase;
-				}
-			}
-			// Off creep upgrades
-			if !upgrades.is_empty() {
-				if let Some((upgrade_id, increase)) = OFF_CREEP_SPEED_UPGRADES.get(&unit_type) {
-					if upgrades.contains(upgrade_id) {
-						speed *= increase;
-					}
-				}
-			}
-
 			speed
 		})
+	}
+	/// Returns actual speed of the unit calculated including buffs and upgrades.
+	pub fn real_speed(&self) -> f32 {
+		if self.is_unit_on_creep() {
+			 self.on_creep_speed()
+		} else {
+			self.off_creep_speed()
+		}
 	}
 	/// Distance unit can travel per one step.
 	pub fn distance_per_step(&self) -> f32 {
@@ -2114,6 +2142,8 @@ impl Unit {
 
 				// cache
 				real_speed: Default::default(),
+				on_creep_speed: Default::default(),
+				off_creep_speed: Default::default(),
 				real_weapon_vs: Default::default(),
 			}),
 		}

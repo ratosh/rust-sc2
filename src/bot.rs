@@ -458,6 +458,7 @@ pub struct Bot {
 	pub expansions: Vec<Expansion>,
 	max_cooldowns: Rw<FxHashMap<UnitTypeId, f32>>,
 	last_units_health: Rw<FxHashMap<u64, u32>>,
+	last_units_seen: Rw<FxHashMap<u64, u32>>,
 	/// Obstacles on map which block vision of ground units, but still pathable.
 	pub vision_blockers: Vec<Point2>,
 	/// Ramps on map.
@@ -853,6 +854,7 @@ impl Bot {
 			race_values: Rs::clone(&self.race_values),
 			max_cooldowns: Rs::clone(&self.max_cooldowns),
 			last_units_health: Rs::clone(&self.last_units_health),
+			last_units_seen: Rs::clone(&self.last_units_seen),
 			abilities_units: Rs::clone(&self.abilities_units),
 			enemy_upgrades: Rs::clone(&self.enemy_upgrades),
 			upgrades: Rs::clone(&self.state.observation.raw.upgrades),
@@ -1156,6 +1158,13 @@ impl Bot {
 			.all
 			.iter()
 			.filter_map(|u| Some((u.tag(), u.hits()?)))
+			.collect();
+
+		*self.last_units_seen.write_lock() = self
+			.units
+			.all
+			.iter()
+			.filter_map(|u| Some((u.tag(),  self.last_units_seen.read_lock().get(&u.tag()).copied().unwrap_or_else(||self.state.observation.game_loop()))))
 			.collect();
 
 		self.units.clear();
@@ -1872,6 +1881,7 @@ impl Default for Bot {
 			expansions: Default::default(),
 			max_cooldowns: Default::default(),
 			last_units_health: Default::default(),
+			last_units_seen: Default::default(),
 			vision_blockers: Default::default(),
 			ramps: Default::default(),
 			enemy_upgrades: Default::default(),
