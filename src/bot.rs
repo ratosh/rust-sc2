@@ -799,9 +799,7 @@ impl Bot {
 					x.saturating_add(center.0 as isize) as usize,
 					y.saturating_add(center.1 as isize) as usize,
 				);
-				println!("{point:?} Visibility check");
 				if !self.is_visible(point) {
-					println!("{point:?} Not visible");
 					return false;
 				}
 			}
@@ -970,7 +968,7 @@ impl Bot {
 				}
 				minerals.sort_by(|a, b| {
 					let dist = |t: &u64| resources[*t].position().distance_squared(loc);
-					dist(a).partial_cmp(&dist(b)).unwrap()
+					dist(a).partial_cmp(&dist(b)).unwrap_or(std::cmp::Ordering::Equal)
 				});
 
 				Expansion {
@@ -1008,7 +1006,7 @@ impl Bot {
 			.map(|(exp, path)| (exp.loc, path))
 			.collect::<FxHashMap<Point2, f32>>();
 
-		expansions.sort_unstable_by(|a, b| paths[&a.loc].partial_cmp(&paths[&b.loc]).unwrap());
+		expansions.sort_unstable_by(|a, b| paths[&a.loc].partial_cmp(&paths[&b.loc]).unwrap_or(std::cmp::Ordering::Equal));
 
 		self.expansions = expansions;
 
@@ -1720,7 +1718,7 @@ impl Bot {
 			.into_iter()
 			.zip(paths)
 			.filter_map(|(exp, path)| Some((exp, path?)))
-			.min_by(|(_, path1), (_, path2)| path1.partial_cmp(path2).unwrap())
+			.min_by(|(_, path1), (_, path2)| path1.partial_cmp(path2).unwrap_or(std::cmp::Ordering::Equal))
 			.map(|(exp, _)| exp)
 	}
 	/// Returns all [`expansions`](Self::expansions) taken by bot.

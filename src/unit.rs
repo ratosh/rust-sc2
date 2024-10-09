@@ -1,6 +1,7 @@
 //! Stuff for convenient interaction with [`Unit`]s.
 #![allow(missing_docs)]
 
+use std::cmp::Ordering;
 use crate::{
 	action::{Commander, Target},
 	bot::{LockBool, LockOwned, LockU32, Locked, Reader, Rl, Rs, Rw},
@@ -1045,7 +1046,7 @@ impl Unit {
 			weapons
 				.iter()
 				.map(|w| w.range)
-				.max_by(|r1, r2| r1.partial_cmp(r2).unwrap())
+				.max_by(|r1, r2| r1.partial_cmp(r2).unwrap_or(Ordering::Equal))
 				.unwrap_or(0.0)
 		} else {
 			let not_target = {
@@ -1173,7 +1174,7 @@ impl Unit {
 			weapons
 				.iter()
 				.map(extract_range)
-				.max_by(|r1, r2| r1.partial_cmp(r2).unwrap())
+				.max_by(|r1, r2| r1.partial_cmp(r2).unwrap_or(Ordering::Equal))
 				.unwrap_or(0.0)
 		} else {
 			let not_target = {
@@ -1220,7 +1221,7 @@ impl Unit {
 			weapons
 				.iter()
 				.map(extract_dps)
-				.max_by(|d1, d2| d1.partial_cmp(d2).unwrap())
+				.max_by(|d1, d2| d1.partial_cmp(d2).unwrap_or(Ordering::Equal))
 				.unwrap_or(0.0)
 		} else {
 			let not_target = {
@@ -1470,7 +1471,7 @@ impl Unit {
 						None
 					}
 				})
-				.max_by(|b1, b2| b1.partial_cmp(b2).unwrap())
+				.max_by(|b1, b2| b1.partial_cmp(b2).unwrap_or(Ordering::Equal))
 			{
 				damage += bonus;
 			}
@@ -1552,7 +1553,7 @@ impl Unit {
 					.weapons()
 					.iter()
 					.map(|w| w.range)
-					.max_by(|r1, r2| r1.partial_cmp(r2).unwrap())
+					.max_by(|r1, r2| r1.partial_cmp(r2).unwrap_or(Ordering::Equal))
 				{
 					Some(max_range) => max_range,
 					None => return false,

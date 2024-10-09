@@ -190,7 +190,7 @@ impl Ramp {
 		depots.sort_unstable_by(|d1, d2| {
 			d1.distance_squared(start)
 				.partial_cmp(&d2.distance_squared(start))
-				.unwrap()
+				.unwrap_or(Ordering::Equal)
 		});
 
 		let wall1 = depots[1] + direction;
@@ -206,7 +206,7 @@ impl Ramp {
 		depots.sort_unstable_by(|d1, d2| {
 			d1.distance_squared(start)
 				.partial_cmp(&d2.distance_squared(start))
-				.unwrap()
+				.unwrap_or(Ordering::Equal)
 		});
 
 		Some(depots[0] - direction)

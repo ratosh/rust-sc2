@@ -12,7 +12,7 @@ where
 	T: PartialOrd,
 	F: Fn(&U) -> T + Send + Sync,
 {
-	move |a, b| f(a).partial_cmp(&f(b)).unwrap()
+	move |a, b| f(a).partial_cmp(&f(b)).unwrap_or(Ordering::Equal)
 }
 
 impl Units {

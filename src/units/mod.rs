@@ -538,7 +538,7 @@ use std::cmp::Ordering;
 
 #[inline]
 fn cmp<T: PartialOrd>(a: &T, b: &T) -> Ordering {
-	a.partial_cmp(b).unwrap()
+	a.partial_cmp(b).unwrap_or(Ordering::Equal)
 }
 
 #[cfg(not(feature = "rayon"))]
@@ -548,7 +548,7 @@ where
 	T: PartialOrd,
 	F: Fn(&U) -> T,
 {
-	move |a, b| f(a).partial_cmp(&f(b)).unwrap()
+	move |a, b| f(a).partial_cmp(&f(b)).unwrap_or(Ordering::Equal)
 }
 
 #[inline]

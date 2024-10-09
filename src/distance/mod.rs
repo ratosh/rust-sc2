@@ -41,7 +41,7 @@ impl<T: Into<Point2>> Distance for T {}
 
 #[inline]
 fn cmp<T: PartialOrd>(a: &T, b: &T) -> Ordering {
-	a.partial_cmp(b).unwrap()
+	a.partial_cmp(b).unwrap_or(Ordering::Equal)
 }
 
 #[inline]
@@ -51,7 +51,7 @@ where
 	P: Into<Point2> + Copy,
 {
 	let f = move |u: &T| u.distance_squared(target);
-	move |a, b| f(a).partial_cmp(&f(b)).unwrap()
+	move |a, b| f(a).partial_cmp(&f(b)).unwrap_or(Ordering::Equal)
 }
 
 /// Helper trait for iterators of items implementing [`Distance`].
