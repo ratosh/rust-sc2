@@ -29,7 +29,7 @@ use sc2_proto::raw::{
 	UnitOrder_oneof_target as ProtoTarget,
 };
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct WeaponStats {
 	pub damage: u32,
 	pub speed: f32,
@@ -38,7 +38,7 @@ pub struct WeaponStats {
 
 impl WeaponStats {
 	pub fn dps(&self) -> f32 {
-		self.damage as f32 * self.speed
+		self.damage as f32 / self.speed
 	}
 }
 
@@ -691,10 +691,15 @@ impl Unit {
 	///
 	/// Not populated for snapshots.
 	pub fn hits(&self) -> Option<u32> {
+		let extra_shield = if self.has_buff(BuffId::ImmortalShield) {
+			100
+		} else {
+			0
+		};
 		match (self.health(), self.shield()) {
-			(Some(health), Some(shield)) => Some(health + shield),
-			(Some(health), None) => Some(health),
-			(None, Some(shield)) => Some(shield),
+			(Some(health), Some(shield)) => Some(health + shield  + extra_shield),
+			(Some(health), None) => Some(health + extra_shield),
+			(None, Some(shield)) => Some(shield + extra_shield),
 			(None, None) => None,
 		}
 	}

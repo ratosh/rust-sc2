@@ -793,13 +793,31 @@ impl Bot {
 	}
 	pub fn is_surround_visible<P: Into<(usize, usize)>>(&self, pos: P, range: isize) -> bool {
 		let center = pos.into();
-		for x in -range..range {
-			for y in -range..range {
+		for x in -range..=range {
+			for y in -range..=range {
 				let point = (
 					x.saturating_add(center.0 as isize) as usize,
 					y.saturating_add(center.1 as isize) as usize,
 				);
 				if !self.is_visible(point) {
+					return false;
+				}
+			}
+		}
+		true
+	}
+	pub fn has_creep_around<P: Into<(usize, usize)>>(&self, pos: P, range: isize) -> bool {
+		let center = pos.into();
+		for x in -range..=range {
+			for y in -range..=range {
+				if (x * x + y * y) > range * range {
+					continue;
+				}
+				let point = (
+					x.saturating_add(center.0 as isize) as usize,
+					y.saturating_add(center.1 as isize) as usize,
+				);
+				if !self.has_creep(point) {
 					return false;
 				}
 			}

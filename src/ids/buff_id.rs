@@ -305,7 +305,7 @@ pub enum BuffId {
 	AmorphousArmorcloud = 296,
 	RavenShredderMissileArmorReductionUISubtruct = 297,
 	BatteryOvercharge = 298,
-	DummyBuff001 = 299,
+	ImmortalShield = 299,
 	DummyBuff002 = 300,
 	DummyBuff003 = 301,
 	DummyBuff004 = 302,
