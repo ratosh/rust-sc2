@@ -935,7 +935,8 @@ impl Bot {
 			.into_iter()
 			.map(|group| {
 				let resources = all_resources.find_tags(group.iter().map(|(_, tag)| tag));
-				let center = resources.center().unwrap().floor() + 0.5;
+				let center = ((resources.iter().filter(|u| u.is_geyser()).center().unwrap() +
+					resources.iter().filter(|u| !u.is_geyser()).center().unwrap()) / 2f32).floor() + 0.5;
 
 				let (loc, center, alliance, base) = if center.is_closer(4.0, self.start_center) {
 					(
@@ -1024,7 +1025,11 @@ impl Bot {
 			.map(|(exp, path)| (exp.loc, path))
 			.collect::<FxHashMap<Point2, f32>>();
 
-		expansions.sort_unstable_by(|a, b| paths[&a.loc].partial_cmp(&paths[&b.loc]).unwrap_or(std::cmp::Ordering::Equal));
+		expansions.sort_unstable_by(|a, b| {
+			paths[&a.loc]
+				.partial_cmp(&paths[&b.loc])
+				.unwrap_or(std::cmp::Ordering::Equal)
+		});
 
 		self.expansions = expansions;
 
@@ -1180,7 +1185,16 @@ impl Bot {
 			.units
 			.all
 			.iter()
-			.filter_map(|u| Some((u.tag(),  self.last_units_seen.read_lock().get(&u.tag()).copied().unwrap_or_else(||self.state.observation.game_loop()))))
+			.filter_map(|u| {
+				Some((
+					u.tag(),
+					self.last_units_seen
+						.read_lock()
+						.get(&u.tag())
+						.copied()
+						.unwrap_or_else(|| self.state.observation.game_loop()),
+				))
+			})
 			.collect();
 
 		self.units.clear();
