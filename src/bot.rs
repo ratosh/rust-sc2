@@ -897,8 +897,8 @@ impl Bot {
 			(resources.sum(|r| r.position()) + self.enemy_start) / (resources.len() + 1) as f32;
 
 		// Calculating expansion locations
-		const RESOURCE_SPREAD: f32 = 72.25; // 8.5
-		const HEIGHT_DIFFERENCE: u8 = 0; // SAME HEIGHT
+		const RESOURCE_SPREAD: f32 = 72.25f32; // 8.5
+		const HEIGHT_DIFFERENCE: u8 = 2; // SAME HEIGHT
 
 		let all_resources = self
 			.units
@@ -933,10 +933,16 @@ impl Bot {
 
 		let mut expansions = resource_groups
 			.into_iter()
+			.filter(|group| group.len() > 1)
 			.map(|group| {
 				let resources = all_resources.find_tags(group.iter().map(|(_, tag)| tag));
-				let center = ((resources.iter().filter(|u| u.is_geyser()).center().unwrap() +
-					resources.iter().filter(|u| !u.is_geyser()).center().unwrap()) / 2f32).floor() + 0.5;
+				let resources_center = resources.center().unwrap().floor() + 0.5;
+				let center = if resources.iter().any(|u| u.is_geyser()) && resources.iter().any(|u| !u.is_geyser()) {
+					((resources.iter().filter(|u| u.is_geyser()).center().unwrap() +
+						resources.iter().filter(|u| !u.is_geyser()).center().unwrap()) / 2f32).floor() + 0.5
+				} else {
+					resources.iter().center().unwrap().floor() + 0.5
+				};
 
 				let (loc, center, alliance, base) = if center.is_closer(4.0, self.start_center) {
 					(
@@ -951,16 +957,16 @@ impl Bot {
 					let location = offsets
 						.iter()
 						.filter_map(|(x, y)| {
-							let pos = center.offset(*x as f32, *y as f32);
+							let pos = resources_center.offset(*x as f32, *y as f32);
 							if self.is_placeable((pos.x as usize, pos.y as usize)) {
-								let mut distance_sum = 0_f32;
+								let mut max_distance = 0_f32;
 								let far_enough = |r: &Unit| {
 									let dist = pos.distance_squared(r);
-									distance_sum += dist.sqrt();
+									max_distance = max_distance.max(dist.sqrt());
 									dist >= if r.is_geyser() { 49.0 } else { 36.0 }
 								};
 								if resources.iter().all(far_enough) {
-									return Some((pos, distance_sum));
+									return Some((pos, max_distance));
 								}
 							}
 							None
@@ -970,7 +976,7 @@ impl Bot {
 						.0;
 					(
 						location,
-						(resources.sum(|r| r.position()) + location) / (resources.len() + 1) as f32,
+						center,
 						Alliance::Neutral,
 						None,
 					)
@@ -1002,20 +1008,20 @@ impl Bot {
 			.collect::<Vec<_>>();
 
 		// Sort expansions by distance to start location
-		let start = Target::Pos(self.start_location);
+		let start = Target::Pos(self.start_location.towards(self.game_info.map_center, -5f32));
 		let my_paths = self
-			.query_pathing(expansions.iter().map(|exp| (start, exp.loc)).collect())
+			.query_pathing(expansions.iter().map(|exp| (start, exp.loc.towards(self.game_info.map_center, -5f32))).collect())
 			.unwrap();
-		let enemy_start = Target::Pos(self.enemy_start);
+		let enemy_start = Target::Pos(self.enemy_start.towards(self.game_info.map_center, -5f32));
 		let enemy_paths = self
-			.query_pathing(expansions.iter().map(|exp| (enemy_start, exp.loc)).collect())
+			.query_pathing(expansions.iter().map(|exp| (enemy_start, exp.loc.towards(self.game_info.map_center, -5f32))).collect())
 			.unwrap();
 
 		let paths: Vec<f32> = my_paths
 			.iter()
 			.zip(enemy_paths.into_iter())
 			.map(|(my_path, enemy_path)| {
-				my_path.unwrap_or(f32::INFINITY) * 2f32 - enemy_path.unwrap_or(f32::INFINITY)
+				my_path.unwrap_or(1_000_000f32) * 2f32 - enemy_path.unwrap_or(1_000_000f32)
 			})
 			.collect();
 

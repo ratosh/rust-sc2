@@ -119,6 +119,7 @@ where
 	raw.effects = res_raw
 		.get_effects()
 		.iter()
+		.filter(|e| EffectId::from_u32(e.get_effect_id()).is_some())
 		.map(|e| Effect {
 			id: {
 				let id = e.get_effect_id();
@@ -187,6 +188,7 @@ where
 	*raw.upgrades.write_lock() = raw_player
 		.get_upgrade_ids()
 		.iter()
+		.filter(|&u| UpgradeId::from_u32(*u).is_some())
 		.map(|u| UpgradeId::from_u32(*u).unwrap_or_else(|| panic!("There's no `UpgradeId` with value {}", u)))
 		.collect::<FxHashSet<_>>();
 
