@@ -1021,7 +1021,7 @@ impl Bot {
 			.iter()
 			.zip(enemy_paths.into_iter())
 			.map(|(my_path, enemy_path)| {
-				my_path.unwrap_or(1_000_000f32) * 2f32 - enemy_path.unwrap_or(1_000_000f32)
+				my_path.unwrap_or(1_000_000f32) * 1.8f32 - enemy_path.unwrap_or(1_000_000f32)
 			})
 			.collect();
 
