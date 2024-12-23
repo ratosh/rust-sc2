@@ -2094,6 +2094,7 @@ impl Unit {
 				orders: u
 					.get_orders()
 					.iter()
+					.filter(|order| AbilityId::from_u32(order.get_ability_id()).is_some())
 					.map(|order| UnitOrder {
 						ability: {
 							let id = order.get_ability_id();
