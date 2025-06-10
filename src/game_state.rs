@@ -151,6 +151,8 @@ where
 		let alliance = if bot.owned_tags.remove(u) {
 			bot.available_frames.write_lock().remove(u);
 			bot.under_construction.remove(u);
+			bot.last_units_hits.write_lock().remove(u);
+			bot.last_units_seen.write_lock().remove(u);
 			Some(Alliance::Own)
 		} else {
 			let removed = bot.saved_hallucinations.remove(u);

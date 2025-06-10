@@ -205,7 +205,7 @@ pub struct PlacementOptions {
 impl Default for PlacementOptions {
 	fn default() -> Self {
 		Self {
-			max_distance: 15,
+			max_distance: 17,
 			step: 2,
 			random: false,
 			addon: false,
@@ -457,8 +457,8 @@ pub struct Bot {
 	/// All expansions.
 	pub expansions: Vec<Expansion>,
 	max_cooldowns: Rw<FxHashMap<UnitTypeId, f32>>,
-	last_units_health: Rw<FxHashMap<u64, u32>>,
-	last_units_seen: Rw<FxHashMap<u64, u32>>,
+	pub(crate) last_units_hits: Rw<FxHashMap<u64, u32>>,
+	pub(crate) last_units_seen: Rw<FxHashMap<u64, u32>>,
 	/// Obstacles on map which block vision of ground units, but still pathable.
 	pub vision_blockers: Vec<Point2>,
 	/// Ramps on map.
@@ -869,7 +869,7 @@ impl Bot {
 			reactor_tags: Rs::clone(&self.reactor_tags),
 			race_values: Rs::clone(&self.race_values),
 			max_cooldowns: Rs::clone(&self.max_cooldowns),
-			last_units_health: Rs::clone(&self.last_units_health),
+			last_units_hits: Rs::clone(&self.last_units_hits),
 			last_units_seen: Rs::clone(&self.last_units_seen),
 			abilities_units: Rs::clone(&self.abilities_units),
 			enemy_upgrades: Rs::clone(&self.enemy_upgrades),
@@ -937,12 +937,15 @@ impl Bot {
 			.map(|group| {
 				let resources = all_resources.find_tags(group.iter().map(|(_, tag)| tag));
 				let resources_center = resources.center().unwrap().floor() + 0.5;
-				let center = if resources.iter().any(|u| u.is_geyser()) && resources.iter().any(|u| !u.is_geyser()) {
-					((resources.iter().filter(|u| u.is_geyser()).center().unwrap() +
-						resources.iter().filter(|u| !u.is_geyser()).center().unwrap()) / 2f32).floor() + 0.5
-				} else {
-					resources.iter().center().unwrap().floor() + 0.5
-				};
+				let center =
+					if resources.iter().any(|u| u.is_geyser()) && resources.iter().any(|u| !u.is_geyser()) {
+						((resources.iter().filter(|u| u.is_geyser()).center().unwrap()
+							+ resources.iter().filter(|u| !u.is_geyser()).center().unwrap())
+							/ 2f32)
+							.floor() + 0.5
+					} else {
+						resources.iter().center().unwrap().floor() + 0.5
+					};
 
 				let (loc, center, alliance, base) = if center.is_closer(4.0, self.start_center) {
 					(
@@ -974,12 +977,7 @@ impl Bot {
 						.min_by(|(_, d1), (_, d2)| d1.partial_cmp(d2).unwrap())
 						.expect("Can't detect right position for expansion")
 						.0;
-					(
-						location,
-						center,
-						Alliance::Neutral,
-						None,
-					)
+					(location, center, Alliance::Neutral, None)
 				};
 
 				let mut minerals = FxIndexSet::default();
@@ -1010,16 +1008,26 @@ impl Bot {
 		// Sort expansions by distance to start location
 		let start = Target::Pos(self.start_location.towards(self.game_info.map_center, -5f32));
 		let my_paths = self
-			.query_pathing(expansions.iter().map(|exp| (start, exp.loc.towards(self.game_info.map_center, -5f32))).collect())
+			.query_pathing(
+				expansions
+					.iter()
+					.map(|exp| (start, exp.loc.towards(self.game_info.map_center, -5f32)))
+					.collect(),
+			)
 			.unwrap();
 		let enemy_start = Target::Pos(self.enemy_start.towards(self.game_info.map_center, -5f32));
 		let enemy_paths = self
-			.query_pathing(expansions.iter().map(|exp| (enemy_start, exp.loc.towards(self.game_info.map_center, -5f32))).collect())
+			.query_pathing(
+				expansions
+					.iter()
+					.map(|exp| (enemy_start, exp.loc.towards(self.game_info.map_center, -5f32)))
+					.collect(),
+			)
 			.unwrap();
 
 		let paths: Vec<f32> = my_paths
 			.iter()
-			.zip(enemy_paths.into_iter())
+			.zip(enemy_paths.iter())
 			.map(|(my_path, enemy_path)| {
 				my_path.unwrap_or(1_000_000f32) * 1.8f32 - enemy_path.unwrap_or(1_000_000f32)
 			})
@@ -1180,7 +1188,7 @@ impl Bot {
 		self.orders = orders;
 	}
 	pub(crate) fn update_units(&mut self, all_units: Units) {
-		*self.last_units_health.write_lock() = self
+		*self.last_units_hits.write_lock() = self
 			.units
 			.all
 			.iter()
@@ -1606,7 +1614,8 @@ impl Bot {
 			vec![(self.game_data.units[&building].ability.unwrap(), pos, None)],
 			false,
 		)
-		.unwrap()[0] == ActionResult::Success
+		.unwrap()[0]
+			== ActionResult::Success
 	}
 	/// Simple wrapper around [`query_placement`](Self::query_placement).
 	/// Multi-version of [`can_place`](Self::can_place).
@@ -1916,7 +1925,7 @@ impl Default for Bot {
 			reactor_tags: Default::default(),
 			expansions: Default::default(),
 			max_cooldowns: Default::default(),
-			last_units_health: Default::default(),
+			last_units_hits: Default::default(),
 			last_units_seen: Default::default(),
 			vision_blockers: Default::default(),
 			ramps: Default::default(),

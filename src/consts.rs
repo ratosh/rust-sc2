@@ -848,7 +848,6 @@ lazy_static! {
 		UnitTypeId::Zergling => (UpgradeId::Zerglingmovementspeed, 1.6),
 		UnitTypeId::Baneling => (UpgradeId::CentrificalHooks, 1.18),
 		UnitTypeId::Roach => (UpgradeId::GlialReconstitution, 1.333_333_4),
-		UnitTypeId::Hydralisk => (UpgradeId::HydraliskSpeedUpgrade, 1.25f32),
 		UnitTypeId::LurkerMP => (UpgradeId::DiggingClaws, 1.1),
 		UnitTypeId::Ultralisk => (UpgradeId::AnabolicSynthesis, 1.2f32),
 	];
@@ -887,8 +886,12 @@ lazy_static! {
 		UnitTypeId::SporeCrawler => AbilityId::SporeCrawlerUprootSporeCrawlerUproot,
 	];
 
+	pub(crate) static ref ON_CREEP_SPEED_UPGRADES: HashMap<UnitTypeId, (UpgradeId, f32)> = hashmap![
+		UnitTypeId::Hydralisk => (UpgradeId::EvolveMuscularAugments, 1.17),
+	];
+
 	pub(crate) static ref OFF_CREEP_SPEED_UPGRADES: HashMap<UnitTypeId, (UpgradeId, f32)> = hashmap![
-		UnitTypeId::Hydralisk => (UpgradeId::EvolveMuscularAugments, 1.25),
+		UnitTypeId::Hydralisk => (UpgradeId::EvolveMuscularAugments, 1.31),
 		UnitTypeId::Ultralisk => (UpgradeId::AnabolicSynthesis, 1.2),
 	];
 	pub(crate) static ref SPEED_ON_CREEP: HashMap<UnitTypeId, f32> = hashmap![
@@ -955,7 +958,7 @@ lazy_static! {
 		UnitTypeId::VoidRay => vec![Weapon {
 			target: TargetType::Any,
 			damage: 6,
-			damage_bonus: vec![],
+			damage_bonus: vec![(Attribute::Armored, 4)],
 			attacks: 1,
 			range: 6.0,
 			speed: 0.504,
@@ -991,6 +994,14 @@ lazy_static! {
 			attacks: 1,
 			range: 5.0,
 			speed: 1.0,
+		}],
+		UnitTypeId::LurkerMPBurrowed => vec![Weapon {
+			target: TargetType::Ground,
+			damage: 20,
+			damage_bonus: vec![(Attribute::Armored, 10)],
+			attacks: 1,
+			range: 8.0,
+			speed: 2.0,
 		}],
 	];
 	/// Radiuses of Inhibitor Zones mapped to their ids.

@@ -1,7 +1,6 @@
 //! Stuff for convenient interaction with [`Unit`]s.
 #![allow(missing_docs)]
 
-use std::cmp::Ordering;
 use crate::{
 	action::{Commander, Target},
 	bot::{LockBool, LockOwned, LockU32, Locked, Reader, Rl, Rs, Rw},
@@ -28,6 +27,8 @@ use sc2_proto::raw::{
 	CloakState as ProtoCloakState, DisplayType as ProtoDisplayType, Unit as ProtoUnit,
 	UnitOrder_oneof_target as ProtoTarget,
 };
+use std::cmp::Ordering;
+use crate::consts::ON_CREEP_SPEED_UPGRADES;
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct WeaponStats {
@@ -50,7 +51,7 @@ pub(crate) struct DataForUnit {
 	pub reactor_tags: Rw<FxHashSet<u64>>,
 	pub race_values: Rs<RaceValues>,
 	pub max_cooldowns: Rw<FxHashMap<UnitTypeId, f32>>,
-	pub last_units_health: Rw<FxHashMap<u64, u32>>,
+	pub last_units_hits: Rw<FxHashMap<u64, u32>>,
 	pub last_units_seen: Rw<FxHashMap<u64, u32>>,
 	pub abilities_units: Rw<FxHashMap<u64, FxHashSet<AbilityId>>>,
 	pub upgrades: Rw<FxHashSet<UpgradeId>>,
@@ -511,7 +512,7 @@ impl Unit {
 	}
 	/// Unit was attacked on last step.
 	pub fn is_attacked(&self) -> bool {
-		self.hits() < self.data.last_units_health.read_lock().get(&self.tag()).copied()
+		self.hits() < self.data.last_units_hits.read_lock().get(&self.tag()).copied()
 	}
 	/// The damage was taken by unit if it was attacked, otherwise it's `0`.
 	pub fn damage_taken(&self) -> u32 {
@@ -519,7 +520,7 @@ impl Unit {
 			Some(hits) => hits,
 			None => return 0,
 		};
-		let last_hits = match self.data.last_units_health.read_lock().get(&self.tag()).copied() {
+		let last_hits = match self.data.last_units_hits.read_lock().get(&self.tag()).copied() {
 			Some(hits) => hits,
 			None => return 0,
 		};
@@ -527,7 +528,11 @@ impl Unit {
 	}
 	/// Unit was attacked on last step.
 	pub fn time_alive(&self) -> u32 {
-		self.data.game_loop.get_locked().saturating_sub(self.data.last_units_seen.read_lock().get(&self.tag()).copied().unwrap_or_default())
+		if let Some(initially_seen) = self.data.last_units_seen.read_lock().get(&self.tag()).copied() {
+			self.data.game_loop.get_locked().saturating_sub(initially_seen)
+		} else {
+			0
+		}
 	}
 	/// Abilities available for unit to use.
 	///
@@ -697,7 +702,7 @@ impl Unit {
 			0
 		};
 		match (self.health(), self.shield()) {
-			(Some(health), Some(shield)) => Some(health + shield  + extra_shield),
+			(Some(health), Some(shield)) => Some(health + shield + extra_shield),
 			(Some(health), None) => Some(health + extra_shield),
 			(None, Some(shield)) => Some(shield + extra_shield),
 			(None, None) => None,
@@ -738,8 +743,14 @@ impl Unit {
 	pub fn on_creep_speed(&self) -> f32 {
 		*self.base.on_creep_speed.get_or_create(|| {
 			let unit_type = self.type_id();
-			let base_speed = self.base_real_speed();
-			// On creep
+			let mut base_speed = self.base_real_speed();
+			let upgrades = self.upgrades();
+			// Hydralisks speed upgrade bonus is lower on creep
+			if let Some((upgrade_id, increase)) = ON_CREEP_SPEED_UPGRADES.get(&unit_type) {
+				if upgrades.contains(upgrade_id) {
+					base_speed *= increase;
+				}
+			}
 			if let Some(increase) = SPEED_ON_CREEP.get(&unit_type) {
 				return base_speed * increase;
 			}
@@ -755,7 +766,7 @@ impl Unit {
 			let base_speed = self.base_real_speed();
 			if let Some((upgrade_id, increase)) = OFF_CREEP_SPEED_UPGRADES.get(&unit_type) {
 				if upgrades.contains(upgrade_id) {
-					return base_speed * increase
+					return base_speed * increase;
 				}
 			}
 			base_speed
@@ -797,7 +808,7 @@ impl Unit {
 	/// Returns actual speed of the unit calculated including buffs and upgrades.
 	pub fn real_speed(&self) -> f32 {
 		if self.is_unit_on_creep() {
-			 self.on_creep_speed()
+			self.on_creep_speed()
 		} else {
 			self.off_creep_speed()
 		}
@@ -1317,6 +1328,13 @@ impl Unit {
 				(enemy_upgrades, my_upgrades)
 			}
 		};
+		if matches!(self.type_id(), UnitTypeId::Oracle) && !self.has_buff(BuffId::OracleWeapon) {
+			return WeaponStats {
+				damage: 0,
+				speed: 0f32,
+				range: 0f32,
+			};
+		}
 
 		let (not_target, attributes, target_unit) = match target {
 			CalcTarget::Unit(target) => {
@@ -1419,6 +1437,11 @@ impl Unit {
 				}
 				UnitTypeId::Phoenix => {
 					if upgrades.contains(&UpgradeId::PhoenixRangeUpgrade) {
+						range_modifier += 2.0;
+					}
+				}
+				UnitTypeId::LurkerMPBurrowed => {
+					if upgrades.contains(&UpgradeId::LurkerRange) {
 						range_modifier += 2.0;
 					}
 				}
@@ -2184,7 +2207,7 @@ impl FromProto<ProtoDisplayType> for DisplayType {
 }
 
 /// Order given to unit. All current orders of unit stored in [`orders`](Unit::orders) field.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UnitOrder {
 	/// Ability unit is using.
 	pub ability: AbilityId,
@@ -2195,7 +2218,7 @@ pub struct UnitOrder {
 }
 
 /// Unit inside transport or bunker. All passengers stored in [`passengers`](Unit::passengers) field.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PassengerUnit {
 	pub tag: u64,
 	pub health: f32,
