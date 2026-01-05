@@ -437,7 +437,7 @@ impl Unit {
 	fn type_data(&self) -> Option<&UnitTypeData> {
 		self.data.game_data.units.get(&self.type_id())
 	}
-	pub fn upgrades(&self) -> Reader<FxHashSet<UpgradeId>> {
+	pub fn upgrades(&self) -> Reader<'_, FxHashSet<UpgradeId>> {
 		if self.is_mine() {
 			self.data.upgrades.read_lock()
 		} else {
@@ -451,6 +451,9 @@ impl Unit {
 	/// Checks if unit is worker.
 	pub fn is_worker(&self) -> bool {
 		self.type_id().is_worker()
+	}
+	pub fn is_tumor(&self) -> bool {
+		self.type_id().is_tumor()
 	}
 	/// Checks if it's townhall.
 	pub fn is_townhall(&self) -> bool {
@@ -466,11 +469,11 @@ impl Unit {
 	}
 	/// Checks if it's mineral field.
 	pub fn is_mineral(&self) -> bool {
-		self.type_data().map_or(false, |data| data.has_minerals)
+		self.type_data().is_some_and(|data| data.has_minerals)
 	}
 	/// Checks if it's vespene geyser.
 	pub fn is_geyser(&self) -> bool {
-		self.type_data().map_or(false, |data| data.has_vespene)
+		self.type_data().is_some_and(|data| data.has_vespene)
 	}
 	/// Checks if unit is detector.
 	#[rustfmt::skip::macros(matches)]
@@ -492,6 +495,24 @@ impl Unit {
 	pub fn is_ready(&self) -> bool {
 		(self.build_progress() - 1.0).abs() < f32::EPSILON
 	}
+	/// Building construction is complete.
+	pub fn is_ready_time(&self) -> f32 {
+		let build_completed_at = if self.is_ready() {
+			self.data.game_loop.get() as f32
+		} else if self.build_progress() > f32::EPSILON {
+			self.data.game_loop.get() as f32 + (1f32 - self.build_progress()) * self.cost().time
+		} else {
+			0f32
+		};
+		build_completed_at / FRAMES_PER_SECOND
+	}
+	pub fn is_ready_before(&self, time: f32) -> bool {
+		if self.is_ready() && self.data.game_loop.get() as f32 * FRAMES_PER_SECOND < time {
+			return true
+		}
+		let build_completed_at = self.is_ready_time();
+		(time - build_completed_at) > f32::EPSILON
+	}
 	/// Building construction is more than 95% complete.
 	pub fn is_almost_ready(&self) -> bool {
 		self.build_progress() >= 0.95
@@ -503,12 +524,12 @@ impl Unit {
 	/// Terran building's addon is techlab if any.
 	pub fn has_techlab(&self) -> bool {
 		let techlab_tags = self.data.techlab_tags.read_lock();
-		self.addon_tag().map_or(false, |tag| techlab_tags.contains(&tag))
+		self.addon_tag().is_some_and(|tag| techlab_tags.contains(&tag))
 	}
 	/// Terran building's addon is reactor if any.
 	pub fn has_reactor(&self) -> bool {
 		let reactor_tags = self.data.reactor_tags.read_lock();
-		self.addon_tag().map_or(false, |tag| reactor_tags.contains(&tag))
+		self.addon_tag().is_some_and(|tag| reactor_tags.contains(&tag))
 	}
 	/// Unit was attacked on last step.
 	pub fn is_attacked(&self) -> bool {
@@ -550,7 +571,7 @@ impl Unit {
 			.abilities_units
 			.read_lock()
 			.get(&self.tag())
-			.map_or(false, |abilities| abilities.contains(&ability))
+			.is_some_and(|abilities| abilities.contains(&ability))
 	}
 	/// Race of unit, dependent on it's type.
 	pub fn race(&self) -> Race {
@@ -558,7 +579,7 @@ impl Unit {
 	}
 	/// There're some units inside transport or bunker.
 	pub fn has_cargo(&self) -> bool {
-		self.cargo_space_taken().map_or(false, |taken| taken > 0)
+		self.cargo_space_taken().is_some_and(|taken| taken > 0)
 	}
 	/// Free space left in transport or bunker.
 	pub fn cargo_left(&self) -> Option<u32> {
@@ -696,7 +717,7 @@ impl Unit {
 	///
 	/// Not populated for snapshots.
 	pub fn hits(&self) -> Option<u32> {
-		let extra_shield = if self.has_buff(BuffId::ImmortalShield) {
+		let extra_shield = if self.has_buff(BuffId::TakenDamage) {
 			100
 		} else {
 			0
@@ -828,7 +849,7 @@ impl Unit {
 	/// Checks if unit has given attribute.
 	pub fn has_attribute(&self, attribute: Attribute) -> bool {
 		self.type_data()
-			.map_or(false, |data| data.attributes.contains(&attribute))
+			.is_some_and(|data| data.attributes.contains(&attribute))
 	}
 	/// Checks if unit has `Light` attribute.
 	pub fn is_light(&self) -> bool {
@@ -1017,7 +1038,7 @@ impl Unit {
 	}
 	/// Checks if unit's weapon is on cooldown.
 	pub fn on_cooldown(&self) -> bool {
-		self.weapon_cooldown().map_or(false, |cool| cool > f32::EPSILON)
+		self.weapon_cooldown().is_some_and(|cool| cool > f32::EPSILON)
 	}
 	/// Returns max cooldown in frames for unit's weapon.
 	pub fn max_cooldown(&self) -> Option<f32> {
@@ -1162,6 +1183,11 @@ impl Unit {
 				}
 				UnitTypeId::Colossus => {
 					if upgrades.contains(&UpgradeId::ExtendedThermalLance) {
+						return w.range + 2f32;
+					}
+				}
+				UnitTypeId::LurkerMPBurrowed => {
+					if upgrades.contains(&UpgradeId::LurkerRange) {
 						return w.range + 2f32;
 					}
 				}
@@ -1716,7 +1742,7 @@ impl Unit {
 	///
 	/// Doesn't work with enemies.
 	pub fn is_using_any<A: Container<AbilityId>>(&self, abilities: &A) -> bool {
-		self.ordered_ability().map_or(false, |a| abilities.contains(&a))
+		self.ordered_ability().is_some_and(|a| abilities.contains(&a))
 	}
 	/// Checks if unit is currently attacking.
 	///
@@ -1775,7 +1801,7 @@ impl Unit {
 	///
 	/// Doesn't work with enemies.
 	pub fn is_collecting(&self) -> bool {
-		self.orders().first().map_or(false, |order| match self.type_id() {
+		self.orders().first().is_some_and(|order| match self.type_id() {
 			UnitTypeId::SCV => matches!(
 				order.ability,
 				AbilityId::HarvestGatherSCV | AbilityId::HarvestReturnSCV
@@ -1799,7 +1825,7 @@ impl Unit {
 	///
 	/// Doesn't work with enemies.
 	pub fn is_constructing(&self) -> bool {
-		self.orders().first().map_or(false, |order| match self.type_id() {
+		self.orders().first().is_some_and(|order| match self.type_id() {
 			UnitTypeId::SCV => order.ability.is_constructing_scv(),
 			UnitTypeId::Drone => order.ability.is_constructing_drone(),
 			UnitTypeId::Probe => order.ability.is_constructing_probe(),
@@ -1810,7 +1836,7 @@ impl Unit {
 	/// Checks if worker is currently constructing a specific building.
 	///
 	/// Doesn't work with enemies.
-	pub fn is_constructing_any(&self, unit_types: &Vec<UnitTypeId>) -> bool {
+	pub fn is_constructing_any(&self, unit_types: &[UnitTypeId]) -> bool {
 		unit_types
 			.iter()
 			.map(|t| self.data.game_data.units.get(t).and_then(|data| data.ability))
@@ -1821,7 +1847,7 @@ impl Unit {
 	///
 	/// Doesn't work with enemies.
 	pub fn is_making_addon(&self) -> bool {
-		self.orders().first().map_or(false, |order| match self.type_id() {
+		self.orders().first().is_some_and(|order| match self.type_id() {
 			UnitTypeId::Barracks => matches!(
 				order.ability,
 				AbilityId::BuildTechLabBarracks | AbilityId::BuildReactorBarracks
@@ -1869,7 +1895,7 @@ impl Unit {
 			.available_frames
 			.read_lock()
 			.get(&self.tag())
-			.map_or(false, |frame| self.data.game_loop.get_locked() < *frame)
+			.is_some_and(|frame| self.data.game_loop.get_locked() < *frame)
 	}
 	/// Makes unit ignore all your commands for given amount of frames.
 	///
@@ -2059,7 +2085,7 @@ impl Unit {
 					DisplayType::Visible => {
 						if visibility
 							.get(<(usize, usize)>::from(position))
-							.map_or(false, |p| p.is_visible())
+							.is_some_and(|p| p.is_visible())
 						{
 							DisplayType::Visible
 						} else {

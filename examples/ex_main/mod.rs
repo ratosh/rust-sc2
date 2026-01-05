@@ -126,6 +126,7 @@ pub(crate) fn main(mut bot: impl Player + DerefMut<Target = Bot> + Deref<Target 
 			args.host_port.expect("GamePort must be specified"),
 			args.player_port.expect("StartPort must be specified"),
 			args.opponent_id.as_deref(),
+			args.realtime
 		),
 	}
 }

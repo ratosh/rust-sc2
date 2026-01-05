@@ -95,7 +95,7 @@ use parking_lot::{RwLock, RwLockReadGuard};
 #[cfg(not(feature = "parking_lot"))]
 use std::sync::{RwLock, RwLockReadGuard};
 
-fn read<T>(lock: &RwLock<T>) -> RwLockReadGuard<T> {
+fn read<T>(lock: &RwLock<T>) -> RwLockReadGuard<'_, T> {
 	#[cfg(feature = "parking_lot")]
 	let reader = lock.read();
 	#[cfg(not(feature = "parking_lot"))]

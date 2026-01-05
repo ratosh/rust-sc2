@@ -149,7 +149,7 @@ impl Ramp {
 		self.barracks_in_middle().map(|pos| {
 			if self
 				.corner_depots()
-				.map_or(false, |depots| pos.x + 1.0 > depots[0].x.max(depots[1].x))
+				.is_some_and(|depots| pos.x + 1.0 > depots[0].x.max(depots[1].x))
 			{
 				pos
 			} else {

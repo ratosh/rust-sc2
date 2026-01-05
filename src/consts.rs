@@ -295,6 +295,8 @@ lazy_static! {
 		UnitTypeId::WidowMineBurrowed => UnitTypeId::WidowMine,
 		UnitTypeId::Zergling => UnitTypeId::ZerglingBurrowed,
 		UnitTypeId::ZerglingBurrowed => UnitTypeId::Zergling,
+		UnitTypeId::Gateway => UnitTypeId::WarpGate,
+		UnitTypeId::WarpGate => UnitTypeId::Gateway,
 	];
 	/// Tech requirements mapped to different units.
 	///
@@ -973,11 +975,11 @@ lazy_static! {
 		}],
 		UnitTypeId::Carrier => vec![Weapon {
 			target: TargetType::Any,
-			damage: 5,
+			damage: 1,
 			damage_bonus: vec![],
-			attacks: 16,
+			attacks: 1,
 			range: 8.0, // Interceptors launch range
-			speed: 2.996,
+			speed: 5.0,
 		}],
 		UnitTypeId::Oracle => vec![Weapon {
 			target: TargetType::Ground,

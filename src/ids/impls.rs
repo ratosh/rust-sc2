@@ -2,6 +2,16 @@ use super::{AbilityId, UnitTypeId};
 
 impl UnitTypeId {
 	#[inline]
+	pub fn is_tumor(self) -> bool {
+		matches!(
+			self,
+			UnitTypeId::CreepTumor
+				| UnitTypeId::CreepTumorBurrowed
+				| UnitTypeId::CreepTumorMissile
+				| UnitTypeId::CreepTumorQueen
+		)
+	}
+	#[inline]
 	pub fn is_worker(self) -> bool {
 		matches!(
 			self,

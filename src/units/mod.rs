@@ -80,6 +80,8 @@ pub struct PlayerUnits {
 	pub larvas: Units,
 	/// Kind of things that appear when you order worker to build something but construction didn't started yet.
 	pub placeholders: Units,
+	/// Tumors are zerg specific structures, but we don't need to handle them as other structures.
+	pub tumors: Units,
 }
 impl PlayerUnits {
 	pub(crate) fn clear(&mut self) {
@@ -91,6 +93,7 @@ impl PlayerUnits {
 		self.gas_buildings.clear();
 		self.larvas.clear();
 		self.placeholders.clear();
+		self.tumors.clear();
 	}
 }
 
@@ -168,31 +171,31 @@ impl Units {
 
 	/// Returns an iterator over the units of the collection.
 	#[inline]
-	pub fn iter(&self) -> Values<u64, Unit> {
+	pub fn iter(&self) -> Values<'_, u64, Unit> {
 		self.0.values()
 	}
 
 	/// Returns mutable iterator over the units of the collection.
 	#[inline]
-	pub fn iter_mut(&mut self) -> ValuesMut<u64, Unit> {
+	pub fn iter_mut(&mut self) -> ValuesMut<'_, u64, Unit> {
 		self.0.values_mut()
 	}
 
 	/// Returns an iterator over (tag, unit) pairs of the collection.
 	#[inline]
-	pub fn pairs(&self) -> Iter<u64, Unit> {
+	pub fn pairs(&self) -> Iter<'_, u64, Unit> {
 		self.0.iter()
 	}
 
 	/// Returns mutable iterator over (tag, unit) pairs of the collection.
 	#[inline]
-	pub fn pairs_mut(&mut self) -> IterMut<u64, Unit> {
+	pub fn pairs_mut(&mut self) -> IterMut<'_, u64, Unit> {
 		self.0.iter_mut()
 	}
 
 	/// Returns an iterator over unit tags of the collection.
 	#[inline]
-	pub fn tags(&self) -> Keys<u64, Unit> {
+	pub fn tags(&self) -> Keys<'_, u64, Unit> {
 		self.0.keys()
 	}
 
@@ -290,6 +293,10 @@ impl Units {
 			Some(self.sum(|u| u.position()) / self.len() as f32)
 		}
 	}
+	/// Returns a vec of unit positions.
+	pub fn positions(&self) -> Vec<Point2> {
+		self.iter().map(|u| u.position()).collect()
+	}
 	/// Leaves only non-flying units and makes new collection of them.
 	///
 	/// Warning: This method will clone units in order to create a new collection
@@ -319,6 +326,16 @@ impl Units {
 	/// [`ready`]: UnitsIterator::ready
 	pub fn ready(&self) -> Self {
 		self.filter(|u| u.is_ready())
+	}
+	/// Leaves only ready structures and makes new collection of them.
+	///
+	/// Warning: This method will clone units in order to create a new collection
+	/// and will be evaluated initially. When applicable prefer using [`ready`]
+	/// on the iterator over units, since it's lazily evaluated and doesn't do any cloning operations.
+	///
+	/// [`ready`]: UnitsIterator::ready
+	pub fn ready_before(&self, time: f32) -> Self {
+		self.filter(|u| u.is_ready_before(time))
 	}
 	/// Leaves only structures in-progress and makes new collection of them.
 	///
@@ -533,6 +550,7 @@ impl IndexMut<usize> for Units {
 		&mut self.0[i]
 	}
 }
+
 
 use std::cmp::Ordering;
 

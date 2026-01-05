@@ -701,7 +701,7 @@ pub enum Event {
 /// Trait that bots must implement.
 pub trait Player {
 	/// Returns settings used to connect bot to the game.
-	fn get_player_settings(&self) -> PlayerSettings;
+	fn get_player_settings(&self) -> PlayerSettings<'_>;
 	/// Called once on first step (i.e on game start).
 	fn on_start(&mut self) -> SC2Result<()> {
 		Ok(())

@@ -78,11 +78,11 @@ pub(crate) type Writer<'a, T> = RwLockWriteGuard<'a, T>;
 pub(crate) type Writer<'a, T> = RefMut<'a, T>;
 
 pub(crate) trait Locked<T> {
-	fn read_lock(&self) -> Reader<T>;
-	fn write_lock(&self) -> Writer<T>;
+	fn read_lock(&self) -> Reader<'_, T>;
+	fn write_lock(&self) -> Writer<'_, T>;
 }
 impl<T> Locked<T> for Rl<T> {
-	fn read_lock(&self) -> Reader<T> {
+	fn read_lock(&self) -> Reader<'_, T> {
 		#[cfg(feature = "rayon")]
 		{
 			#[cfg(feature = "parking_lot")]
@@ -99,7 +99,7 @@ impl<T> Locked<T> for Rl<T> {
 			self.borrow()
 		}
 	}
-	fn write_lock(&self) -> Writer<T> {
+	fn write_lock(&self) -> Writer<'_, T> {
 		#[cfg(feature = "rayon")]
 		{
 			#[cfg(feature = "parking_lot")]
@@ -514,14 +514,14 @@ impl Bot {
 	/// ```
 	/// let count = self.counter().all().tech().count(UnitTypeId::CommandCenter);
 	/// ```
-	pub fn counter(&self) -> CountOptions {
+	pub fn counter(&self) -> CountOptions<'_> {
 		CountOptions::new(self, false)
 	}
 	/// The same as [`counter`](Self::counter), but counts enemy units instead.
 	///
 	/// All information about enemy units count is based on scouting.
 	/// Also there's no way to see ordered enemy units, but bot sees enemy structures in-progress.
-	pub fn enemy_counter(&self) -> CountOptions {
+	pub fn enemy_counter(&self) -> CountOptions<'_> {
 		CountOptions::new(self, true)
 	}
 	pub(crate) fn get_actions(&mut self) -> &[Action] {
@@ -673,7 +673,7 @@ impl Bot {
 		self.state.observation.raw.upgrades.read_lock().contains(&upgrade)
 	}
 	/// Returns a set of upgrades.
-	pub fn upgrades(&self) -> Reader<FxHashSet<UpgradeId>> {
+	pub fn upgrades(&self) -> Reader<'_, FxHashSet<UpgradeId>> {
 		self.state.observation.raw.upgrades.read_lock()
 	}
 	/// Checks if predicted opponent's upgrades contains given upgrade.
@@ -681,7 +681,7 @@ impl Bot {
 		self.enemy_upgrades.read_lock().contains(&upgrade)
 	}
 	/// Returns mutable set of predicted opponent's upgrades.
-	pub fn enemy_upgrades(&self) -> Writer<FxHashSet<UpgradeId>> {
+	pub fn enemy_upgrades(&self) -> Writer<'_, FxHashSet<UpgradeId>> {
 		self.enemy_upgrades.write_lock()
 	}
 	/// Checks if upgrade is in progress.
@@ -691,7 +691,7 @@ impl Bot {
 			.upgrades
 			.get(&upgrade)
 			.and_then(|a| self.orders.get(&a.ability).copied())
-			.map_or(false, |count| count > 0)
+			.is_some_and(|count| count > 0)
 	}
 	/// Returns progress of making given upgrade.
 	/// - `1` - complete
@@ -755,14 +755,14 @@ impl Bot {
 		self.game_info
 			.placement_grid
 			.get(pos.into())
-			.map_or(false, |p| p.is_empty())
+			.is_none_or(|p| p.is_empty())
 	}
 	/// Checks if it's possible for ground units to walk through given position.
 	pub fn is_pathable<P: Into<(usize, usize)>>(&self, pos: P) -> bool {
 		self.game_info
 			.pathing_grid
 			.get(pos.into())
-			.map_or(false, |p| p.is_empty())
+			.is_none_or(|p| p.is_empty())
 	}
 	/// Checks if given position is hidden (wasn't explored before).
 	pub fn is_hidden<P: Into<(usize, usize)>>(&self, pos: P) -> bool {
@@ -771,7 +771,7 @@ impl Bot {
 			.raw
 			.visibility
 			.get(pos.into())
-			.map_or(true, |p| p.is_hidden())
+			.is_none_or(|p| p.is_hidden())
 	}
 	/// Checks if given position is in fog of war (was explored before).
 	pub fn is_fogged<P: Into<(usize, usize)>>(&self, pos: P) -> bool {
@@ -780,7 +780,7 @@ impl Bot {
 			.raw
 			.visibility
 			.get(pos.into())
-			.map_or(true, |p| p.is_fogged())
+			.is_none_or(|p| p.is_fogged())
 	}
 	/// Checks if given position is visible now.
 	pub fn is_visible<P: Into<(usize, usize)>>(&self, pos: P) -> bool {
@@ -789,7 +789,7 @@ impl Bot {
 			.raw
 			.visibility
 			.get(pos.into())
-			.map_or(false, |p| p.is_visible())
+			.is_some_and(|p| p.is_visible())
 	}
 	pub fn is_surround_visible<P: Into<(usize, usize)>>(&self, pos: P, range: isize) -> bool {
 		let center = pos.into();
@@ -832,7 +832,7 @@ impl Bot {
 			.raw
 			.visibility
 			.get(pos.into())
-			.map_or(true, |p| p.is_full_hidden())
+			.is_none_or(|p| p.is_full_hidden())
 	}
 	/// Checks if given position is not hidden (was explored before).
 	pub fn is_explored<P: Into<(usize, usize)>>(&self, pos: P) -> bool {
@@ -841,7 +841,7 @@ impl Bot {
 			.raw
 			.visibility
 			.get(pos.into())
-			.map_or(false, |p| p.is_explored())
+			.is_some_and(|p| p.is_explored())
 	}
 	/// Checks if given position has zerg's creep.
 	pub fn has_creep<P: Into<(usize, usize)>>(&self, pos: P) -> bool {
@@ -851,7 +851,7 @@ impl Bot {
 			.creep
 			.read_lock()
 			.get(pos.into())
-			.map_or(false, |p| p.is_empty())
+			.is_some_and(|p| p.is_empty())
 	}
 	pub(crate) fn init_data_for_unit(&mut self) {
 		self.race = self.game_info.players[&self.player_id].race_actual.unwrap();
@@ -1006,30 +1006,34 @@ impl Bot {
 			.collect::<Vec<_>>();
 
 		// Sort expansions by distance to start location
-		let start = Target::Pos(self.start_location.towards(self.game_info.map_center, -5f32));
+		let start = Target::Pos(self.start_center);
 		let my_paths = self
 			.query_pathing(
 				expansions
 					.iter()
-					.map(|exp| (start, exp.loc.towards(self.game_info.map_center, -5f32)))
+					.map(|exp| (start, exp.center))
 					.collect(),
 			)
 			.unwrap();
-		let enemy_start = Target::Pos(self.enemy_start.towards(self.game_info.map_center, -5f32));
+		let enemy_start = Target::Pos(self.enemy_start_center);
 		let enemy_paths = self
 			.query_pathing(
 				expansions
 					.iter()
-					.map(|exp| (enemy_start, exp.loc.towards(self.game_info.map_center, -5f32)))
+					.map(|exp| (enemy_start, exp.center))
 					.collect(),
 			)
 			.unwrap();
+		let center_paths = expansions
+					.iter()
+					.map(|exp| self.game_info.map_center.distance(exp.center))
+					.collect::<Vec<f32>>();
 
-		let paths: Vec<f32> = my_paths
-			.iter()
-			.zip(enemy_paths.iter())
-			.map(|(my_path, enemy_path)| {
-				my_path.unwrap_or(1_000_000f32) * 1.8f32 - enemy_path.unwrap_or(1_000_000f32)
+		let paths: Vec<f32> = izip!(my_paths, enemy_paths, center_paths)
+			.map(|(my_path, enemy_path, center_path)| {
+				my_path.unwrap_or(1_000_000f32) * 2.5f32
+					- enemy_path.unwrap_or(1_000_000f32)
+					- center_path * 1.6f32
 			})
 			.collect();
 
@@ -1286,6 +1290,8 @@ impl Bot {
 					if u.is_structure() {
 						if u.is_placeholder() {
 							add_to!(units.placeholders);
+						} else if u.is_tumor() {
+							add_to!(units.tumors);
 						} else {
 							add_to!(units.structures);
 							match u.type_id() {
