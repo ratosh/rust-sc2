@@ -644,6 +644,7 @@ pub struct PlayerSettings<'a> {
 	pub name: Option<&'a str>,
 	pub raw_affects_selection: bool,
 	pub raw_crop_to_playable_area: bool,
+	pub feature_layer: bool,
 }
 impl<'a> PlayerSettings<'a> {
 	/// Constructs new settings with given `Race`.
@@ -653,6 +654,7 @@ impl<'a> PlayerSettings<'a> {
 			name: None,
 			raw_affects_selection: false,
 			raw_crop_to_playable_area: false,
+			feature_layer: false,
 		}
 	}
 	/// Sets name of the player.
@@ -670,6 +672,10 @@ impl<'a> PlayerSettings<'a> {
 		self.raw_crop_to_playable_area = val;
 		self
 	}
+	pub fn feature_layer(mut self, val: bool) -> Self {
+		self.feature_layer = val;
+		self
+	}
 }
 impl Default for PlayerSettings<'_> {
 	fn default() -> Self {
@@ -678,6 +684,7 @@ impl Default for PlayerSettings<'_> {
 			name: None,
 			raw_affects_selection: false,
 			raw_crop_to_playable_area: false,
+			feature_layer: false,
 		}
 	}
 }

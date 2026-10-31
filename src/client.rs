@@ -552,6 +552,11 @@ fn join_game(settings: &PlayerSettings, api: &API, ports: Option<&Ports>) -> SC2
 	wait_join(api)
 }
 fn join_game2(settings: &PlayerSettings, api: &API, ports: Option<&Ports>) -> SC2Result<()> {
+	api.send_only(join_game_request(settings, ports))?;
+	Ok(())
+}
+
+fn join_game_request(settings: &PlayerSettings, ports: Option<&Ports>) -> Request {
 	let mut req = Request::new();
 	let req_join_game = req.mut_join_game();
 
@@ -567,6 +572,13 @@ fn join_game2(settings: &PlayerSettings, api: &API, ports: Option<&Ports>) -> SC
 	options.set_show_placeholders(true);
 	options.set_raw_affects_selection(settings.raw_affects_selection);
 	options.set_raw_crop_to_playable_area(settings.raw_crop_to_playable_area);
+	if settings.feature_layer {
+		let camera = options.mut_feature_layer();
+		camera.mut_resolution().set_x(1);
+		camera.mut_resolution().set_y(1);
+		camera.mut_minimap_resolution().set_x(1);
+		camera.mut_minimap_resolution().set_y(1);
+	}
 	if let Some(name) = &settings.name {
 		req_join_game.set_player_name(name.to_string());
 	}
@@ -587,9 +599,69 @@ fn join_game2(settings: &PlayerSettings, api: &API, ports: Option<&Ports>) -> SC
 		}
 	}
 
-	api.send_only(req)?;
-	Ok(())
+	req
 }
+
+#[cfg(test)]
+mod join_game_tests {
+	use super::*;
+	use crate::Race;
+
+	#[test]
+	fn feature_layers_are_opt_in() {
+		for settings in [PlayerSettings::default(), PlayerSettings::new(Race::Zerg)] {
+			assert!(!settings.feature_layer);
+			assert!(!join_game_request(&settings, None)
+				.get_join_game()
+				.get_options()
+				.has_feature_layer());
+		}
+		let settings = PlayerSettings::new(Race::Zerg)
+			.feature_layer(true)
+			.feature_layer(false);
+		assert!(!join_game_request(&settings, None)
+			.get_join_game()
+			.get_options()
+			.has_feature_layer());
+	}
+
+	#[test]
+	fn minimal_feature_layers_preserve_ladder_identity_ports_and_raw_settings() {
+		let settings = PlayerSettings::new(Race::Zerg)
+			.with_name("Carcara")
+			.raw_affects_selection(true)
+			.raw_crop_to_playable_area(true);
+		let ports = Ports {
+			server: (6002, 6003),
+			client: vec![(6004, 6005)],
+		};
+		let original = join_game_request(&settings, Some(&ports));
+		let mut enabled = join_game_request(&settings.feature_layer(true), Some(&ports));
+		let options = enabled.get_join_game().get_options();
+		assert!(options.get_raw());
+		assert!(options.get_raw_affects_selection());
+		assert!(options.get_raw_crop_to_playable_area());
+		assert!(options.get_score());
+		let camera = options.get_feature_layer();
+		assert_eq!(camera.get_resolution().get_x(), 1);
+		assert_eq!(camera.get_resolution().get_y(), 1);
+		assert_eq!(camera.get_minimap_resolution().get_x(), 1);
+		assert_eq!(camera.get_minimap_resolution().get_y(), 1);
+		enabled.mut_join_game().mut_options().clear_feature_layer();
+		assert_eq!(enabled, original);
+	}
+
+	#[test]
+	fn local_join_enables_the_same_minimal_interface_without_ladder_ports() {
+		let request = join_game_request(&PlayerSettings::new(Race::Terran).feature_layer(true), None);
+		let join = request.get_join_game();
+		assert!(join.get_options().has_feature_layer());
+		assert!(join.get_options().get_raw());
+		assert!(!join.has_server_ports());
+		assert!(join.get_client_ports().is_empty());
+	}
+}
+
 fn wait_join(api: &API) -> SC2Result<u32> {
 	let res = api.wait_response()?;
 
