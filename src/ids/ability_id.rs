@@ -716,6 +716,7 @@ pub enum AbilityId {
 	EffectMassRecallMothership = 2368,
 	LoadNydusWorm = 2370,
 	UnloadAllNydusWorm = 2371,
+	UnloadUnitNydusWorm = 2373,
 	BehaviorPulsarBeamOn = 2375,
 	BehaviorPulsarBeamOff = 2376,
 	PulsarBeamRipField = 2377,
